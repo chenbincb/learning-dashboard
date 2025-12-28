@@ -1,5 +1,6 @@
 {
     "service": {
-        "name": "learning-dashboard"
+        "name": "learning-dashboard",
+        "start_command": "node .next/standalone/server.js"
     }
 }
