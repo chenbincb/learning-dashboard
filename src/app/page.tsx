@@ -812,6 +812,7 @@ function SubjectInsightPanel({
     const decliners = [...insights].filter(i => i.gain < 0).sort((a, b) => a.gain - b.gain).slice(0, 2);
 
     // 2. 目标差异分析 + 加权计算 (使用难度系数)
+    const isGoalReached = targetData ? totalScore >= targetData.total_score : false;
     const totalGap = targetData ? Math.max(0, targetData.total_score - totalScore).toFixed(1) : null;
 
     // 所有9科加权提分建议
@@ -838,8 +839,8 @@ function SubjectInsightPanel({
 
         return {
             subject: subName,
-            gap: Math.round(rawGap * 10) / 10,
-            weight: Math.round(weight * 10) / 10,
+            gap: isGoalReached ? 0 : Math.round(rawGap * 10) / 10,
+            weight: isGoalReached ? 0 : Math.round(weight * 10) / 10,
             difficulty: Math.round(difficultyRatio * 100)
         };
     }).sort((a, b) => b.weight - a.weight);
@@ -851,6 +852,10 @@ function SubjectInsightPanel({
 
     const generateSmartInsight = () => {
         if (!targetData) return '当前表现均衡，建议继续保持优势科目。';
+
+        if (isGoalReached) {
+            return `您已达到前 ${targetRank} 名的目标水平（对标分数 ${targetData.total_score}），表现优异！建议继续保持优势学科，均衡各科发展。`;
+        }
 
         let analysis = `距前 ${targetRank} 名还差 ${totalGap} 分。`;
 
@@ -949,12 +954,14 @@ function SubjectInsightPanel({
 
             {/* 底部总计差距 */}
             <div className="pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <span className="text-[12px] font-bold text-slate-500 uppercase">距目标建议提分</span>
+                <span className="text-[12px] font-bold text-slate-500 uppercase">
+                    {isGoalReached ? '当前目标状态' : '距目标建议提分'}
+                </span>
                 <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
-                        {totalGap ? `+${totalGap}` : '--'}
+                    <span className={`text-2xl font-black ${isGoalReached ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                        {isGoalReached ? '已达标' : (totalGap ? `+${totalGap}` : '--')}
                     </span>
-                    <span className="text-[10px] font-bold text-slate-400">分</span>
+                    {!isGoalReached && <span className="text-[10px] font-bold text-slate-400">分</span>}
                 </div>
             </div>
         </div>
