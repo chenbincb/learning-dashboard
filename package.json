@@ -31,5 +31,8 @@
     "postcss": "latest",
     "tailwindcss": "latest",
     "typescript": "latest"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

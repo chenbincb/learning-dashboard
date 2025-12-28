@@ -288,9 +288,9 @@ export default function Dashboard() {
                             return (
                                 <>
                                     <StatCard
-                                        title="总成绩"
-                                        value={`${latest.total_score}分`}
-                                        subValue={`/ 满分 ${totalFull}`}
+                                        title="总分"
+                                        value={`${latest.total_score}`}
+                                        subValue={`/  ${totalFull}`}
                                         extra={
                                             <span className="text-blue-600 dark:text-blue-400">班均: {classAvgTotal.toFixed(1)}分</span>
                                         }
