@@ -30,6 +30,7 @@
     "eslint-config-next": "latest",
     "postcss": "latest",
     "tailwindcss": "latest",
+    "@tailwindcss/postcss": "latest",
     "typescript": "latest"
   },
   "engines": {
