@@ -53,3 +53,17 @@ CREATE TABLE IF NOT EXISTS subject_scores (
     FOREIGN KEY (result_id) REFERENCES exam_results(id),
     UNIQUE(result_id, subject)
 );
+
+-- AI 诊断缓存表
+CREATE TABLE IF NOT EXISTS ai_diagnoses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT NOT NULL,
+    exam_id INTEGER NOT NULL,
+    intent TEXT NOT NULL, -- 'OVERVIEW', 'SUBJECT_DEEP_DIVE', 'STRATEGY'
+    model TEXT,
+    result TEXT NOT NULL, -- JSON string or Image URL
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(id),
+    FOREIGN KEY (exam_id) REFERENCES exams(id),
+    UNIQUE(student_id, exam_id, intent, model)
+);

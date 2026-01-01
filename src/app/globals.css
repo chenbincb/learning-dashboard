@@ -34,3 +34,16 @@ body {
 .top-3 {
   top: calc(var(--spacing) * 2.5);
 }
+
+/* 确保所有可点击元素都有鼠标手势 */
+button, 
+a, 
+select, 
+label, 
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
