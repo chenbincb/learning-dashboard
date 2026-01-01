@@ -1,37 +1,43 @@
-import Database from 'better-sqlite3';
 import path from 'path';
-
 import fs from 'fs';
 
-const getDbPath = () => {
-    const relativePath = 'data/scores.db';
-    let currentPath = path.join(process.cwd(), relativePath);
+let dbInstance: any = null;
 
-    // 如果当前路径不存在，尝试向上级查找 (适配某些部署环境)
-    if (!fs.existsSync(currentPath)) {
-        const parentPath = path.join(process.cwd(), '..', relativePath);
-        if (fs.existsSync(parentPath)) {
-            return parentPath;
-        }
+const getDbPath = () => {
+    // 优先使用环境变量定义的 DB 路径
+    if (process.env.DB_PATH) {
+        return process.env.DB_PATH;
     }
-    return currentPath;
+    const relativePath = 'data/scores.db';
+    return path.join(process.cwd(), relativePath);
 };
 
-const dbPath = getDbPath();
-
-let db: Database.Database | null = null;
-
 export function getDb() {
-    if (!db) {
-        // 关键修复：确保数据目录存在，否则 Zeabur 首次部署会 Crash
+    if (!dbInstance) {
+        const dbPath = getDbPath();
         const dir = path.dirname(dbPath);
-        if (!fs.existsSync(dir)) {
-            console.log(`[DB] Creating missing directory: ${dir}`);
-            fs.mkdirSync(dir, { recursive: true });
+
+        try {
+            if (!fs.existsSync(dir)) {
+                console.log(`[DB] Creating missing directory: ${dir}`);
+                fs.mkdirSync(dir, { recursive: true });
+            }
+        } catch (e) {
+            console.error(`[DB] Failed to create directory ${dir}. Using memory DB fallback or causing fatal error. Error:`, e);
+            // 这里我们不 Crash，而是抛出错误让上层处理，或者降级处理
         }
 
-        db = new Database(dbPath);
-        db.pragma('foreign_keys = ON');
+        try {
+            // Lazy load better-sqlite3 to avoid top-level load crashes
+            const Database = require('better-sqlite3');
+            dbInstance = new Database(dbPath);
+            dbInstance.pragma('foreign_keys = ON');
+            console.log(`[DB] Database initialized at ${dbPath}`);
+        } catch (e: any) {
+            console.error("[DB] Failed to initialize SQLite:", e);
+            throw new Error(`Database initialization failed: ${e.message}`);
+        }
     }
-    return db;
+    return dbInstance;
 }
+
