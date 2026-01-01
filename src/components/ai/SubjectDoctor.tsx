@@ -87,8 +87,7 @@ export function SubjectDoctor({ subject, studentId, examId, trendData, peerCompa
 
                     <div className="absolute bottom-3 left-6 z-20 text-white">
                         <div className="flex items-center gap-2 mb-1 opacity-90">
-                            <Sparkles className="w-5 h-5" />
-                            <span className="text-sm font-medium tracking-wide">AI 深度病理诊断</span>
+                            <span className="text-sm font-medium tracking-wide">AI 深度学情分析</span>
                         </div>
                         <h2 className="text-3xl font-bold flex items-center gap-3">
                             {subject.subject}
@@ -134,7 +133,7 @@ export function SubjectDoctor({ subject, studentId, examId, trendData, peerCompa
                             {/* 诊断结论 */}
                             <div className="space-y-3">
                                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                                    <Activity className="w-4 h-4" /> 诊断报告
+                                    <Activity className="w-4 h-4" /> 分析报告
                                 </h3>
                                 <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                                     <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm">
@@ -189,7 +188,7 @@ export function SubjectDoctor({ subject, studentId, examId, trendData, peerCompa
                                 <AlertCircle className="w-8 h-8 text-rose-500" />
                             </div>
                             <div className="space-y-1">
-                                <h3 className="text-slate-900 dark:text-slate-100 font-bold">诊断遇到问题</h3>
+                                <h3 className="text-slate-900 dark:text-slate-100 font-bold">分析遇到问题</h3>
                                 <p className="text-sm text-slate-500 max-w-xs">{error}</p>
                             </div>
                             <button
@@ -206,14 +205,14 @@ export function SubjectDoctor({ subject, studentId, examId, trendData, peerCompa
                             </div>
                             <div className="space-y-1">
                                 <h3 className="text-slate-900 dark:text-slate-100 font-bold">准备好开始了吗？</h3>
-                                <p className="text-sm text-slate-500 max-w-xs">AI 老师将针对您的单科表现进行深度病理分析。</p>
+                                <p className="text-sm text-slate-500 max-w-xs">AI 老师将针对您的单科表现进行深度学情分析。</p>
                             </div>
                             <button
                                 onClick={() => handleDiagnose(true)}
                                 className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
                             >
                                 <Sparkles className="w-4 h-4" />
-                                开始深度诊断
+                                开始深度分析
                             </button>
                         </div>
                     )}
@@ -228,7 +227,7 @@ export function SubjectDoctor({ subject, studentId, examId, trendData, peerCompa
                                 className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
                             >
                                 <Activity className="w-3.5 h-3.5" />
-                                重新诊断
+                                重新分析
                             </button>
                         )}
                     </div>
@@ -236,7 +235,7 @@ export function SubjectDoctor({ subject, studentId, examId, trendData, peerCompa
                         onClick={onClose}
                         className="px-6 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-bold rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
                     >
-                        完成会诊
+                        完成分析
                     </button>
                 </div>
             </div>
@@ -244,8 +243,8 @@ export function SubjectDoctor({ subject, studentId, examId, trendData, peerCompa
                 isOpen={isConfirmOpen}
                 onClose={() => setIsConfirmOpen(false)}
                 onConfirm={() => handleDiagnose(true)}
-                title={`重新诊断 - ${subject.subject}`}
-                description={`确定要对 ${subject.subject} 重新进行深度诊断吗？AI 将结合您的最新表现重新推演薄弱点与攻克建议。`}
+                title={`重新分析 - ${subject.subject}`}
+                description={`确定要对 ${subject.subject} 重新进行深度分析吗？AI 将结合您的最新表现重新推演薄弱点与攻克建议。`}
             />
         </div>
     );

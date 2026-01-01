@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Map, XCircle, Sparkles, Share2, Download, AlertCircle } from 'lucide-react';
+import { Map, XCircle, Sparkles, Share2, Download, AlertCircle, Maximize2, X } from 'lucide-react';
 import { useAI } from '@/hooks/useAI';
 import { AIConfirmModal } from './AIConfirmModal';
 
@@ -17,6 +17,7 @@ export function StrategyPlanner({ latest, targetData, trendData, studentId, exam
     const { diagnose, loading, error, hasKey } = useAI();
     const [result, setResult] = useState<any>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [isFullScreen, setIsFullScreen] = useState(false);
     const [loadingLineIndex, setLoadingLineIndex] = useState(0);
 
     const loadingLines = [
@@ -146,16 +147,19 @@ export function StrategyPlanner({ latest, targetData, trendData, studentId, exam
                             {result?.plan ? (
                                 <div className="space-y-3">
                                     {[
-                                        { label: 'P1', title: '基础巩固', content: result.plan.phase1 },
-                                        { label: 'P2', title: '专项突破', content: result.plan.phase2 },
-                                        { label: 'P3', title: '考前冲刺', content: result.plan.phase3 }
+                                        { label: 'CORE', title: '核心分析', content: result.plan.core_analysis },
+                                        { label: 'WEAK', title: '关键弱点', content: result.plan.key_weakness },
+                                        { label: 'ACT', title: '行动清单', content: result.plan.action_plan }
                                     ].map((phase, idx) => (
                                         <div key={idx} className="bg-indigo-500/5 border border-indigo-500/10 p-3 rounded-xl space-y-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-black bg-indigo-500 text-white px-1.5 rounded-md">{phase.label}</span>
+                                                <span className={`text-[10px] font-black px-1.5 rounded-md text-white ${idx === 0 ? 'bg-blue-500' :
+                                                    idx === 1 ? 'bg-rose-500' :
+                                                        'bg-emerald-500'
+                                                    }`}>{phase.label}</span>
                                                 <span className="text-xs font-bold text-indigo-300">{phase.title}</span>
                                             </div>
-                                            <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
+                                            <p className="text-[11px] text-slate-300 leading-relaxed font-medium whitespace-pre-line">
                                                 {phase.content}
                                             </p>
                                         </div>
@@ -216,7 +220,23 @@ export function StrategyPlanner({ latest, targetData, trendData, studentId, exam
                                     >
                                         <Sparkles className="w-4 h-4" /> 重新生成
                                     </button>
-                                    <button className="flex items-center gap-2 px-4 py-2 bg-white text-slate-900 rounded-full font-bold text-sm shadow-lg hover:bg-slate-100 cursor-pointer">
+                                    <button
+                                        onClick={() => setIsFullScreen(true)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full font-bold text-sm shadow-lg hover:bg-white/20 cursor-pointer transition-colors"
+                                    >
+                                        <Maximize2 className="w-4 h-4" /> 全屏查看
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const link = document.createElement('a');
+                                            link.href = result.image_url;
+                                            link.download = `Strategy_Map_${studentId}.png`;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 bg-white text-slate-900 rounded-full font-bold text-sm shadow-lg hover:bg-slate-100 cursor-pointer"
+                                    >
                                         <Download className="w-4 h-4" /> 保存原图
                                     </button>
                                 </div>
@@ -258,6 +278,24 @@ export function StrategyPlanner({ latest, targetData, trendData, studentId, exam
                         )}
                     </div>
                 </div>
+
+                {/* Full Screen Overlay */}
+                {isFullScreen && result?.image_url && (
+                    <div className="fixed inset-0 z-[110] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setIsFullScreen(false)}>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsFullScreen(false); }}
+                            className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors cursor-pointer"
+                        >
+                            <X className="w-8 h-8" />
+                        </button>
+                        <img
+                            src={result.image_url}
+                            alt="Full Screen Strategy"
+                            className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                )}
 
                 <AIConfirmModal
                     isOpen={isConfirmOpen}

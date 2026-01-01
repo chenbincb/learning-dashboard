@@ -89,7 +89,7 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
                         <Sparkles className="w-5 h-5 text-indigo-500" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">AI 智能诊断未开启</h3>
+                        <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">AI 智能分析未开启</h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400">配置 Gemini API Key，获取深度学情分析</p>
                     </div>
                 </div>
@@ -143,7 +143,7 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
                 <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
                     <div className="flex items-center gap-2">
                         <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                            AI 诊断总评
+                            AI 分析总评
                         </h3>
                         {result && (
                             <span className="text-[10px] px-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
@@ -169,7 +169,7 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
                         ) : result ? (
                             result.summary
                         ) : (
-                            "AI 就绪。点击右侧开始深度诊断。"
+                            "AI 就绪。点击右侧开始深度分析。"
                         )}
                     </div>
                 </div>
@@ -186,11 +186,11 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
 
                     {!loading && !result && (
                         <button
-                            onClick={() => handleDiagnose(true)}
+                            onClick={() => setIsConfirmOpen(true)}
                             className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                             <Sparkles className="w-3 h-3" />
-                            开始诊断
+                            开始分析
                         </button>
                     )}
 
@@ -198,7 +198,7 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
                         <button
                             onClick={() => setIsConfirmOpen(true)}
                             className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-indigo-100 cursor-pointer"
-                            title="重新诊断"
+                            title="重新分析"
                         >
                             <Sparkles className="w-4 h-4" />
                         </button>
@@ -217,8 +217,8 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
                     isOpen={isConfirmOpen}
                     onClose={() => setIsConfirmOpen(false)}
                     onConfirm={() => handleDiagnose(true)}
-                    title="重新进行 AI 诊断"
-                    description="确定要重新进行 AI 诊断吗？这将会深入分析本次考试的所有科目数据，并消耗额外的 AI 资源。"
+                    title="重新进行 AI 分析"
+                    description="确定要重新进行 AI 分析吗？这将会深入分析本次考试的所有科目数据，并消耗额外的 AI 资源。"
                 />
             </div>
         </div>

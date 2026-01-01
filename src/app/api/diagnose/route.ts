@@ -68,8 +68,8 @@ export async function POST(req: NextRequest) {
                 }
             } else {
                 console.log(`[Cache Miss] No cache found for ${body.studentId} - ${intent}`);
-                // 注意：这里去掉了之前的早期返回 null 逻辑，改为允许继续执行 AI 调用
-                // 这样如果没有缓存，就会自动触发 AI 生成，前提是 API Key 有效（或使用默认 Key）
+                // 如果是只读缓存模式（非强制刷新），未命中直接返回 null，不自动调用 AI (防止消耗 Token)
+                return NextResponse.json(null);
             }
         }
 
@@ -188,12 +188,11 @@ export async function POST(req: NextRequest) {
         if (intent === 'STRATEGY') {
             // 第一步：利用 Gemini Pro 制定具体的提分计划
             const analysisSystemPrompt = `
-                你是一位资深的教育规划专家。你需要根据学生的数据，制定一个分为三个阶段的提分计划。
+                你是一位资深的教育规划专家。你需要根据学生的数据，制定一个“核心分析 + 关键弱点 + 行动清单”的战术分析。
                 输出格式必须是 JSON，包含以下字段：
-                - phase1: 基础建设期的核心目标和具体动作 (20字以内)
-                - phase2: 专项突破期的核心目标和具体动作 (20字以内)
-                - phase3: 考前冲刺期的核心目标和具体动作 (20字以内)
-                - visual_description: 描述一个能体现这些计划的赛博朋克风格场景 (英文, 80字左右，用于图像生成)
+                - core_analysis: 核心战略分析 (一针见血，限40字以内)
+                - key_weakness: 关键弱点 (具体知识点，限40字以内)
+                - action_plan: 具体的行动清单 (条理清晰，限60字以内，纯文本)
             `;
 
             const analysisPrompt = `
@@ -209,19 +208,25 @@ export async function POST(req: NextRequest) {
                 return `- ${s.subject}: ${s.score}分 (年级排名: ${s.grade_rank}, 班级排名: ${s.class_rank} | 年级平均: ${s.grade_avg}, 班级平均: ${s.class_avg} | 目标: ${s.target_score}) | 历史趋势: ${insight?.recent_trend || 'N/A'}, 历史平均: ${insight?.avg_score || 'N/A'}`;
             }).join('\n')}
                 
-                请结合历史趋势和分差，给出具有实战意义、分阶段的提分方案。
-                注意：如果某科虽然当前分数低但处于“IMPROVING”趋势，请以鼓励和保持为主；如果是“DECLINING”或长期停滞，请作为核心突破点。
+                请结合历史趋势和分差，给出具有实战意义的战略分析。
+                
+                【关键要求】
+                1. 拒绝废话：不要说“保持心态”、“多做练习”这种通用建议。
+                2. 必须具体：指出具体需要提升的*知识板块*或*题型*。
+                3. 结构化：
+                   - "核心分析": 一针见血地指出当前最大的短板是什么。
+                   - "关键弱点": 具体到学科或题型的痛点。
+                   - "行动清单": 3-4 条具体的提分动作。
             `;
 
             const analysisSchema = {
                 type: SchemaType.OBJECT,
                 properties: {
-                    phase1: { type: SchemaType.STRING },
-                    phase2: { type: SchemaType.STRING },
-                    phase3: { type: SchemaType.STRING },
-                    visual_description: { type: SchemaType.STRING }
+                    core_analysis: { type: SchemaType.STRING },
+                    key_weakness: { type: SchemaType.STRING },
+                    action_plan: { type: SchemaType.STRING }
                 },
-                required: ["phase1", "phase2", "phase3", "visual_description"]
+                required: ["core_analysis", "key_weakness", "action_plan"]
             };
 
             const plan = await gemini.diagnoseText('PRO', analysisPrompt, analysisSystemPrompt, analysisSchema);
@@ -231,20 +236,32 @@ export async function POST(req: NextRequest) {
             }
 
             // 第二步：构建包含具体文字指令的 Imagen Prompt
+            // 核心目标：直接进行文字排版
             const finalImagePrompt = `
-                A high-quality academic "Score Improvement Roadmap" infographic. 
-                Visual Scene: ${plan.visual_description}. NOT CYBERPUNK.
-                Style: Clean, professional, minimal, flat design. White or light blue background.
+                A professional "Educational Typography Poster" or "Study Note Layout" in Chinese.
                 
-                Mandatory Text Labels (Must be clearly readable in English or Chinese):
-                1. "TARGET: TOP ${context.target_rank} | GAP: -${context.target_total_score - context.latest_performance.total_score}"
-                2. "PHASE 1: ${plan.phase1}"
-                3. "PHASE 2: ${plan.phase2}"
-                4. "PHASE 3: ${plan.phase3}"
+                **NEGATIVE_PROMPT: CROWDED, MESSY, DISTORTED TEXT, BLURRED, PHOTOS, REALISTIC FACES, SCENERY, ABSTRACT ART.**
                 
-                Design: A clear path/ladder/bridge from "Current" to "Target". 
-                Colors: Ocean blue, emerald green, and soft indigo. 
-                Vibe: Inspiring, structured, clear, academic. 8k, sharp vector-like typography.
+                Layout Requirement:
+                - Divide the canvas into 3 clear sections (Top, Middle, Bottom or Left/Right).
+                - Use BOXES or FRAMES to contain the text.
+                - Decorate with simple stationery icons (pen, book, tape) but maintain WHITE SPACE.
+                
+                Mandatory Text Content to Render (Chinese Hanzi):
+                Section 1 Title: "核心分析"
+                Content 1: "${plan.core_analysis}"
+                
+                Section 2 Title: "关键弱点"
+                Content 2: "${plan.key_weakness}"
+                
+                Section 3 Title: "行动清单"
+                Content 3: "${plan.action_plan}"
+                
+                Visual Style:
+                - Clean, legible High-Res Typography.
+                - Hand-written font aesthetics or Bold Sans-serif.
+                - Colors: White background with Indigo/Blue accents (matching the App Theme).
+                - Look like a beautifully organized "Bullet Journal" page.
             `;
 
             const imageUrl = await gemini.generateImage(finalImagePrompt);
