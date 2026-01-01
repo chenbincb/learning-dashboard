@@ -32,8 +32,15 @@ npm install pm2 -g
 git clone <你的项目地址>
 cd <项目目录>
 
+# 配置环境变量 (AI 功能必需)
+# 创建 .env.local 文件并填入 GEMINI_API_KEY
+echo "GEMINI_API_KEY=AIzaSy..." > .env.local
+
 # 安装依赖
 npm install
+
+# 初始化数据库结构 (包含 AI 诊断表)
+npm run db:init
 
 # 编译生成生产环境代码
 npm run build
@@ -97,6 +104,12 @@ Zeabur 是部署本项目非常理想的选择，支持代码全自动构建和�
     -   **Mount Path (挂载路径)**：需填写 `/src/data` （Zeabur 默认运行目录在 `/src`）。
     -   **注意**：新挂载的卷默认是空的，会覆盖镜像自带的数据库。您需要在挂载后，通过 Zeabur 的“文件管理器”手动将本地的 `scores.db` 上传到该目录下。
 3.  **优点**：支持在线写入，数据不会随部署丢失。
+
+### 2.1 Zeabur 环境变量配置 (关键)
+在 Zeabur 控制台的服务设置中，请务必添加：
+- **GEMINI_API_KEY**: `您的密钥`
+
+如果您是首次部署，可以在 Zeabur 的 "Shell" 或 "Command" 中手动运行一次 `npm run db:init` 以确保数据库结构完整。
 
 - 优点：一键部署，自动配置 SSL (HTTPS)，支持 Git 直接管理数据。
 - 缺点：免费额度适合个人使用，大规模需升级。
