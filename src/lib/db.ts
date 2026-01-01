@@ -23,6 +23,13 @@ let db: Database.Database | null = null;
 
 export function getDb() {
     if (!db) {
+        // 关键修复：确保数据目录存在，否则 Zeabur 首次部署会 Crash
+        const dir = path.dirname(dbPath);
+        if (!fs.existsSync(dir)) {
+            console.log(`[DB] Creating missing directory: ${dir}`);
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
         db = new Database(dbPath);
         db.pragma('foreign_keys = ON');
     }
