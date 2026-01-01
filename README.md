@@ -19,11 +19,16 @@
 - **学科状元勋章**: 自动为单科最高分选手佩戴 🥇 勋章，增加竞技仪式感。
 - **像素级对齐**: 规范化的行高设计，确保多列数据横向对比时绝对对齐。
 
-### 3. 学科排行榜 (Leaderboard)
+### 3. AI 深度诊断 (Subject Doctor)
+- **难度感知引擎**: 独家引入“试卷难度系数” (Grade Avg) 实时计算，AI 能自动识别你是“基础不牢”还是“题目太难”。
+- **波动率去噪**: 采用难度归一化算法计算成绩波动率，精准区分“真实水平起伏”与“试卷难度干扰”。
+- **战略地图 (Global Strategy)**: 生成属于学生的全局备考战略蓝图，跟随学生最新数据动态更新，不随历史视图切换而丢失。
+
+### 4. 学科排行榜 (Leaderboard)
 - **多科目切换**: 支持查询所有单科及总分的实时排名。
 - **组合科目支持**: 特色支持「物化生」、「史政地」等多种选科组合的总分动态排行。
 
-### 4. 数据安全与流转
+### 5. 数据安全与流转
 - **智能导入 UI**: 首页支持一键上传 JSON 数据包。
 - **自动备份系统**: 每次导入前自动在 `data/backups/` 生成数据库物理备份。
 - **数据工具**: 提供 Python 脚本工具，支持将 Excel 转换为标准化导入格式。
@@ -31,12 +36,19 @@
 ## 🛠️ 技术架构
 
 - **前端**: Next.js (App Router), TypeScript, Tailwind CSS, Recharts
+- **AI 核心**: Google Gemini Pro (Reasoning Model) + Nano Banana (Image Gen)
 - **数据库**: SQLite (via better-sqlite3)
 - **图标**: Lucide React
 
 ## 🚀 快速上手指南
 
-### 1. 获取最新数据
+### 1. 环境配置 (API Key)
+本项目集成了 Google Gemini AI。请在根目录创建 `.env.local` 文件（或在服务器配置环境变量）：
+```bash
+GEMINI_API_KEY=AIzaSy... (您的密钥)
+```
+
+### 2. 获取最新数据
 运行根目录下的 Python 脚本：
 ```bash
 python scrape_scores.py
@@ -45,7 +57,7 @@ python scrape_scores.py
 - 汇总好的 Excel 成绩单。
 - 一个名为 `XXXX_import.json` 的导入包。
 
-### 2. 导入到 Web 系统
+### 3. 导入到 Web 系统
 1. 启动 Web 应用：
 ```bash
 npm run dev
@@ -58,26 +70,29 @@ npm run dev
 
 - `/src/app`: Next.js 页面与 API 路由中心。
 - `/src/services`: 核心业务逻辑层（SQL 处理）。
+- `/src/lib`: AI服务、DB连接与工具库。
 - `/data`: 存放生产数据库 `scores.db`。
-- `/data/backups`: 存放系统自动生成的历史备份。
-- `/docs/scrape_scores.py`: 成绩抓取与 JSON 生成一体化工具。
+- `/scripts`: 归档的数据库迁移脚本。
 
 ## 📦 部署指南 (Deployment)
 
 ### 1. 环境要求
-- **Node.js**: 18.x 或更高版本。
+- **Node.js**: 20.x 或更高版本。
 - **Python**: 3.8+ (用于运行爬取脚本)。
-- **依赖库**:
-  - Node.js: `npm install`
-  - Python: `pip install pandas requests beautifulsoup4 openpyxl`
 
-### 2. 生产环境构建
+### 2. 数据库初始化
+在新环境部署时，运行以下命令即可一键初始化最新数据库结构（涵盖 AI 诊断表）：
+```bash
+npm run db:init
+```
+
+### 3. 生产环境构建
 在生产环境中，请先执行构建命令：
 ```bash
 npm run build
 ```
 
-### 3. 启动服务
+### 4. 启动服务
 使用以下命令启动生产服务器：
 ```bash
 npm run start
@@ -87,7 +102,7 @@ npm run start
 pm2 start npm --name "scores-platform" -- start
 ```
 
-### 3. 数据持久化
+### 5. 数据持久化
 由于系统使用 **SQLite** 数据库（`data/scores.db`），请确保部署环境具备持久化存储能力。详细配置（如 Nginx 反向代理、SSL 等）请参考：
 👉 **[部署上线指南](docs/deployment_guide.md)**
 
