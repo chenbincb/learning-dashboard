@@ -217,38 +217,58 @@ export const ScoreService = {
     // 获取科学的目标对标数据 (增强版：含难度系数)
     getTargetReferenceData: (examId: number, targetRank: number) => {
         const db = getDb();
-        // 1. 抓取目标排名附近的样本池 (±10个名次)
-        const range = 10;
-        let resultIds = db.prepare(`
-            SELECT id, total_score 
+        // 新逻辑：线性插值计算目标分数 (针对稀疏数据优化)
+        
+        // 1. 找到排名 <= targetRank 的最近一个 (Upper Bound, 更好或相等的排名)
+        const better = db.prepare(`
+            SELECT id, grade_rank, total_score 
             FROM exam_results 
-            WHERE exam_id = ? AND grade_rank BETWEEN ? AND ?
-        `).all(examId, targetRank - range, targetRank + range) as any[];
+            WHERE exam_id = ? AND grade_rank <= ?
+            ORDER BY grade_rank DESC 
+            LIMIT 1
+        `).get(examId, targetRank) as any;
 
-        if (resultIds.length === 0) {
-            // 如果没查到，找最接近的数据
-            resultIds = db.prepare(`
-                SELECT id, total_score FROM exam_results 
-                WHERE exam_id = ? 
-                ORDER BY ABS(grade_rank - ?) ASC
-                LIMIT 20
-            `).all(examId, targetRank) as any[];
+        // 2. 找到排名 >= targetRank 的最近一个 (Lower Bound, 更差或相等的排名)
+        const worse = db.prepare(`
+            SELECT id, grade_rank, total_score 
+            FROM exam_results 
+            WHERE exam_id = ? AND grade_rank >= ?
+            ORDER BY grade_rank ASC 
+            LIMIT 1
+        `).get(examId, targetRank) as any;
+
+        let targetTotalScore = 0;
+        let referenceIds: number[] = [];
+
+        if (better && worse) {
+            if (better.grade_rank === worse.grade_rank) {
+                targetTotalScore = better.total_score;
+                referenceIds = [better.id];
+            } else {
+                // 线性插值
+                const rankGap = worse.grade_rank - better.grade_rank;
+                const scoreGap = better.total_score - worse.total_score; // 排名越好分数越高，better.score > worse.score
+                const factor = (targetRank - better.grade_rank) / rankGap;
+                targetTotalScore = better.total_score - (scoreGap * factor);
+                referenceIds = [better.id, worse.id];
+            }
+        } else if (better) {
+            targetTotalScore = better.total_score;
+            referenceIds = [better.id];
+        } else if (worse) {
+            targetTotalScore = worse.total_score;
+            referenceIds = [worse.id];
+        } else {
+            return null; // 无数据
         }
-
-        if (resultIds.length === 0) return null;
-
-        // 2. 计算各项得分的中位数
-        const totals = resultIds.map(s => s.total_score).sort((a, b) => a - b);
-        const medianTotal = totals[Math.floor(totals.length / 2)];
-
-        // 获取这些学生的所有科目成绩
-        const ids = resultIds.map(r => r.id);
-        const placeholders = ids.map(() => '?').join(',');
+        
+        // 3. 计算各科分数 (取参考样本的平均值)
+        const placeholders = referenceIds.map(() => '?').join(',');
         const allScores = db.prepare(`
             SELECT subject, score 
             FROM subject_scores 
             WHERE result_id IN (${placeholders})
-        `).all(...ids) as any[];
+        `).all(...referenceIds) as any[];
 
         const subjectMap: Record<string, number[]> = {};
         allScores.forEach(s => {
@@ -258,8 +278,9 @@ export const ScoreService = {
 
         const medianSubjects: Record<string, number> = {};
         Object.keys(subjectMap).forEach(sub => {
-            const scores = subjectMap[sub].sort((a, b) => a - b);
-            medianSubjects[sub] = scores[Math.floor(scores.length / 2)];
+            const scores = subjectMap[sub];
+            const sum = scores.reduce((a, b) => a + b, 0);
+            medianSubjects[sub] = sum / scores.length;
         });
 
         // 3. 获取全年级各科平均分作为难度系数
@@ -278,7 +299,7 @@ export const ScoreService = {
 
         return {
             targetRank,
-            total_score: medianTotal,
+            total_score: targetTotalScore,
             subjects: medianSubjects,
             difficulty: subjectDifficulty // 各科难度系数 (年级平均分)
         };
