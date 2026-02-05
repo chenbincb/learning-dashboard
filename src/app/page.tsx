@@ -504,18 +504,30 @@ export default function Dashboard() {
                             </h3>
                             <div className="flex-1 space-y-4">
                                 {/* 年级先锋 */}
-                                <div className="bg-indigo-50/50 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-100/50 dark:border-indigo-800/20">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">年级先锋</span>
-                                        <Trophy className="w-5 h-5 text-indigo-500" />
-                                    </div>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">
-                                            {latest.subjects.filter((s: any) => s.grade_rank && s.grade_rank <= 200).length}
-                                        </span>
-                                        <span className="text-xs text-slate-500 dark:text-slate-500">门进入年级前 200</span>
-                                    </div>
-                                </div>
+                                {(() => {
+                                    // 动态计算门槛：取最好名次，向上取整到最近的100
+                                    const rankedSubjects = latest.subjects.filter((s: any) => s.grade_rank && s.grade_rank > 0);
+                                    const bestRank = rankedSubjects.length > 0 
+                                        ? Math.min(...rankedSubjects.map((s: any) => s.grade_rank)) 
+                                        : 200;
+                                    const threshold = Math.ceil(bestRank / 100) * 100;
+                                    const count = latest.subjects.filter((s: any) => s.grade_rank && s.grade_rank <= threshold).length;
+                                    
+                                    return (
+                                        <div className="bg-indigo-50/50 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-100/50 dark:border-indigo-800/20">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">年级先锋</span>
+                                                <Trophy className="w-5 h-5 text-indigo-500" />
+                                            </div>
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">
+                                                    {count}
+                                                </span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-500">门进入年级前 {threshold}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* 班级尖子 */}
                                 <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-xl border border-emerald-100/50 dark:border-emerald-800/20">
@@ -622,7 +634,6 @@ export default function Dashboard() {
                                         ))}
                                     </select>
                                     <Lightbulb className="w-5 h-5 text-indigo-500" />
-                                    ```
                                 </div>
                             </div>
 
