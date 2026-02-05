@@ -31,6 +31,7 @@ export const ScoreService = {
         if (!latestExam) return null;
 
         // 2. 获取该次考试的科目成绩
+        // 确保显式选择 rank 字段，虽说 r.* 应该涵盖，但这里是 subject_scores
         const subjects = db.prepare(`
             SELECT subject, score, grade_rank, class_rank, grade_avg, class_avg
             FROM subject_scores 
@@ -66,7 +67,13 @@ export const ScoreService = {
             };
         });
 
-        return { ...latestExam, subjects: enrichedSubjects };
+        // 确保返回对象包含 grade_rank
+        return { 
+            ...latestExam, 
+            grade_rank: latestExam.grade_rank, // Explicitly return
+            class_rank: latestExam.class_rank, // Explicitly return
+            subjects: enrichedSubjects 
+        };
     },
 
     // 获取特定学生的历史趋势 (最近10次 - 增加数量以便更好观察趋势)
