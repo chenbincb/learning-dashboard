@@ -37,10 +37,11 @@ export function SubjectInsightPanel({
     const isGoalReached = targetData ? totalScore >= targetData.total_score : false;
     const totalGap = targetData ? Math.max(0, targetData.total_score - totalScore).toFixed(1) : null;
 
+    // 1. 计算所有科目的原始差距和权重
     const ALL_SUBJECTS = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
-    const subjectSuggestions = ALL_SUBJECTS.map(subName => {
+    let candidates = ALL_SUBJECTS.map(subName => {
         const s = subjects.find(sub => sub.subject === subName);
-        if (!s) return { subject: subName, gap: 0, weight: 0, difficulty: 0 };
+        if (!s) return { subject: subName, rawGap: 0, weight: 0, difficulty: 0, difficultyRatio: 0, score: 0 };
 
         const fullScore = ['语文', '数学', '英语'].includes(subName) ? 150 : 100;
         const targetValue = targetData?.subjects[subName] || 0;
@@ -56,11 +57,33 @@ export function SubjectInsightPanel({
 
         return {
             subject: subName,
-            gap: isGoalReached ? 0 : Math.round(rawGap * 10) / 10,
-            weight: isGoalReached ? 0 : Math.round(weight * 10) / 10,
-            difficulty: Math.round(difficultyRatio * 100)
+            rawGap, // 原始差距 (对标 benchmark)
+            weight,
+            difficultyRatio,
+            score: s.score
         };
     }).sort((a, b) => b.weight - a.weight);
+
+    // 2. 智能分配提分目标 (只分配由于总分差距带来的缺口)
+    let requiredGain = targetData ? Math.max(0, targetData.total_score - totalScore) : 0;
+    
+    const subjectSuggestions = candidates.map(c => {
+        let suggestedGain = 0;
+        if (requiredGain > 0 && c.rawGap > 0) {
+            // 分配原则：优先填补最容易提分的科目，但不超过该科目的 Benchmark 差距
+            const allocation = Math.min(c.rawGap, requiredGain);
+            suggestedGain = allocation;
+            requiredGain -= allocation;
+        }
+
+        return {
+            subject: c.subject,
+            gap: isGoalReached ? 0 : Math.round(suggestedGain * 10) / 10,
+            weight: c.weight,
+            difficulty: Math.round(c.difficultyRatio * 100)
+        };
+    });
+    // 注意：这里由于 candidates 已经排序，map 后的 subjectSuggestions 也是按权重排序的，无需再 sort
 
     const topGainer = [...insights].filter(i => i.gain > 0).sort((a, b) => b.gain - a.gain)[0];
     const topDecliner = [...insights].filter(i => i.gain < 0).sort((a, b) => a.gain - b.gain)[0];
