@@ -25,31 +25,49 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
     // 检查是否有缓存
     useEffect(() => {
         setResult(null); // 切换学生重置结果
-        if (examResult?.student_id && latestExamId) {
+        if (examResult?.student_id) {
             checkCache();
         }
-    }, [examResult?.student_id, latestExamId]);
+    }, [examResult?.student_id, examResult?.exam_id]); // 监听学生变化和当前考试变化
 
     const checkCache = async () => {
-        // 尝试获取缓存 (使用最新考试ID，确保跨历史查看时总评一致)
-        await handleDiagnose(false);
-    }
-
-    const handleDiagnose = async (forceRefresh: boolean = false) => {
-        if (!examResult || !latestExamId) return;
-
-        // 保护机制：如果不是查看最新考试，且尝试强制刷新(生成)，则阻止
-        // 原因：生成需要基于最新考试的详细 Context，而查看历史时可能只有部分数据
-        if (forceRefresh && !isLatestView) {
-            alert("请切换到最近一次考试页面进行重新诊断");
+        if (!examResult?.student_id) return;
+        
+        // 1. 先查当前考试是否有诊断
+        const res = await handleDiagnose(false, examResult.exam_id);
+        if (res) {
+            setResult(res);
             return;
         }
 
-        // 1. 组装总评 Context
-        // 计算班级均分总和作为难度基准
-        const classAvgTotal = examResult.subjects.reduce((acc: number, curr: any) => acc + (curr.class_avg || 0), 0);
+        // 2. 如果当前考试没有，尝试查该学生历史里最新的诊断 (降级方案)
+        // 这样可以解决导入新数据后，老总评“消失”的错觉
+        const historyIds = [...trend].reverse().map(t => t.exam_id);
+        for (const hid of historyIds) {
+            if (hid === examResult.exam_id) continue;
+            const hRes = await handleDiagnose(false, hid);
+            if (hRes) {
+                setResult({
+                    ...hRes,
+                    isHistorical: true, // 标记这是历史诊断
+                    historicalExamId: hid
+                });
+                break;
+            }
+        }
+    };
 
-        // 提取排名前 5 次趋势
+    const handleDiagnose = async (forceRefresh: boolean = false, targetExamId?: number) => {
+        const queryExamId = targetExamId || latestExamId;
+        if (!examResult || !queryExamId) return null;
+
+        if (forceRefresh && !isLatestView && queryExamId === latestExamId) {
+            alert("请切换到最近一次考试页面进行重新诊断");
+            return null;
+        }
+
+        // 组装 Context (基于传入的 queryExamId 或默认 latestExamId)
+        const classAvgTotal = examResult.subjects.reduce((acc: number, curr: any) => acc + (curr.class_avg || 0), 0);
         const rankTrend = trend.slice(0, 5).map(t => ({
             name: t.name,
             grade_rank: t.grade_rank,
@@ -68,17 +86,16 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
             }
         };
 
-        // 关键修改：此时传入的是 latestExamId，而非当前查看的 exam_id
-        // 从而实现：无论看哪次考试，获取的都是该学生"最新状态"的诊断
         const res = await diagnose('OVERVIEW', context, {
             studentId: examResult.student_id,
-            examId: latestExamId, // <--- Key Change
+            examId: queryExamId,
             forceRefresh
         });
 
-        if (res) {
+        if (res && !targetExamId) {
             setResult(res);
         }
+        return res;
     };
 
     if (!hasKey) {
@@ -146,8 +163,11 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
                             AI 分析总评
                         </h3>
                         {result && (
-                            <span className="text-[10px] px-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
-                                历史分析:{trend.length}
+                            <span className={`text-[10px] px-1.5 rounded-full border whitespace-nowrap ${result.isHistorical
+                                    ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700'
+                                }`}>
+                                {result.isHistorical ? '历史分析' : '最新分析'}
                             </span>
                         )}
                         {result?.confidence_score && (
