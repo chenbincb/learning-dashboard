@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
     TrendingUp,
     TrendingDown,
@@ -57,11 +58,13 @@ import { StrategyPlanner } from '@/components/ai/StrategyPlanner';
 import { ClassTransitionCard } from '@/components/dashboard/ClassTransitionCard';
 
 export default function Dashboard() {
+    const searchParams = useSearchParams();
+    const urlStudentId = searchParams.get('studentId');
     const [data, setData] = useState<any>(null);
     const [compareData, setCompareData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [students, setStudents] = useState<any[]>([]);
-    const [selectedStudentId, setSelectedStudentId] = useState('66641354');
+    const [selectedStudentId, setSelectedStudentId] = useState(urlStudentId || '66641354');
     const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
     const [targetRank, setTargetRank] = useState(500); // 默认目标名次 500
     const [theme, setTheme] = useState<'light' | 'dark'>('light');

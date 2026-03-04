@@ -12,7 +12,19 @@ export default function FormerClassmatesPage() {
     const [sortBy, setSortBy] = useState<'rank' | 'pinyin'>('rank');
     const [showScrollTop, setShowScrollTop] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
-    const itemRefs = React.useRef<{ [key: string]: HTMLDivElement | null }>({});
+    const itemRefs = React.useRef<{ [key: string]: HTMLAnchorElement | null }>({});
+
+const cardColors = [
+    'border-indigo-200 bg-gradient-to-br from-indigo-50 to-white text-indigo-900',
+    'border-rose-200 bg-gradient-to-br from-rose-50 to-white text-rose-900',
+    'border-amber-200 bg-gradient-to-br from-amber-50 to-white text-amber-900',
+    'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white text-emerald-900',
+    'border-sky-200 bg-gradient-to-br from-sky-50 to-white text-sky-900',
+    'border-purple-200 bg-gradient-to-br from-purple-50 to-white text-purple-900',
+    'border-pink-200 bg-gradient-to-br from-pink-50 to-white text-pink-900',
+    'border-cyan-200 bg-gradient-to-br from-cyan-50 to-white text-cyan-900',
+    'border-lime-200 bg-gradient-to-br from-lime-50 to-white text-lime-900',
+];
 
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -173,44 +185,48 @@ export default function FormerClassmatesPage() {
                         <p className="text-slate-500 font-medium animate-pulse">正在汇聚同窗数据...</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {sortedClassmates.map((student, index) => (
-                            <div 
-                                key={student.id} 
-                                ref={el => { itemRefs.current[student.id] = el; }}
-                                className={`group bg-white dark:bg-slate-900 rounded-2xl p-6 border ${highlightStudentId === student.id ? 'border-rose-500 ring-2 ring-rose-500/20 shadow-lg' : 'border-slate-100 dark:border-slate-800 shadow-sm'} hover:shadow-xl hover:-translate-y-1 transition-all duration-300`}
-                            >
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-black transition-colors ${highlightStudentId === student.id ? 'bg-rose-100 text-rose-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:bg-rose-100 group-hover:text-rose-500'}`}>
-                                            {student.name.charAt(0)}
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {sortedClassmates.map((student, index) => {
+                            const colorClass = cardColors[index % cardColors.length].split(' ').pop();
+                            return (
+                                <Link 
+                                    key={student.id} 
+                                    ref={el => { itemRefs.current[student.id] = el; }}
+                                    href={`/?studentId=${student.id}`}
+                                    className={`group block rounded-2xl p-6 border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer ${highlightStudentId === student.id ? 'border-rose-500 ring-2 ring-rose-500/20 shadow-lg bg-rose-50/30 text-rose-900' : cardColors[index % cardColors.length]}`}
+                                >
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-black transition-colors ${highlightStudentId === student.id ? 'bg-rose-100 text-rose-500' : 'bg-white/60 text-slate-600 group-hover:bg-white group-hover:text-rose-500 shadow-inner'}`}>
+                                                {student.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <h3 className={`font-bold text-lg ${highlightStudentId === student.id ? 'text-rose-600' : colorClass}`}>{student.name}</h3>
+                                                <div className={`flex items-center gap-1.5 text-xs ${highlightStudentId === student.id ? 'text-rose-700' : colorClass + '/80'}`}>
+                                                    <MapPin className="w-3 h-3" />
+                                                    <span>当前所在: </span>
+                                                    <span className={`font-bold bg-white/50 dark:bg-slate-800/50 px-2 py-0.5 rounded-full ${highlightStudentId === student.id ? 'text-rose-800' : colorClass}`}>{student.current_class || '未记录'}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-900 dark:text-white text-lg">{student.name}</h3>
-                                            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                                                <MapPin className="w-3 h-3" />
-                                                <span>当前所在: </span>
-                                                <span className="font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{student.current_class || '未记录'}</span>
+                                        <div className="text-right">
+                                            <div className="text-[10px] font-bold uppercase tracking-wider mb-0.5 text-slate-500">年级排名</div>
+                                            <div className={`text-2xl font-black ${highlightStudentId === student.id ? 'text-rose-600' : colorClass}`}>
+                                                {student.grade_rank ? `#${student.grade_rank}` : '---'}
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">年级排名</div>
-                                        <div className={`text-2xl font-black ${highlightStudentId === student.id ? 'text-rose-600' : 'text-slate-800 dark:text-slate-100'}`}>
-                                            {student.grade_rank ? `#${student.grade_rank}` : '---'}
+                                    
+                                    <div className="pt-4 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                                        <div className="flex items-center gap-1 italic">
+                                            <Trophy className="w-3 h-3 text-amber-500" />
+                                            数据来源: {student.exam_name || '暂无成绩数据'}
                                         </div>
+                                        <div className="font-mono text-slate-400">{student.id}</div>
                                     </div>
-                                </div>
-                                
-                                <div className="pt-4 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-                                    <div className="flex items-center gap-1 italic">
-                                        <Trophy className="w-3 h-3 text-amber-500" />
-                                        数据来源: {student.exam_name || '暂无成绩数据'}
-                                    </div>
-                                    <div className="font-mono">{student.id}</div>
-                                </div>
-                            </div>
-                        ))}
+                                </Link>
+                            );
+                        })}
                     </div>
                 )}
                 

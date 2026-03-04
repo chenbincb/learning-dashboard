@@ -368,11 +368,11 @@ export default function LeaderboardPage() {
                                                         {index + 1}
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-5">
-                                                    <div className="flex flex-col">
+<td className="px-8 py-5">
+                                                    <Link href={`/?studentId=${student.id}`} className="flex flex-col hover:opacity-80 transition-opacity">
                                                         <span className={`font-bold transition-all duration-300 ${highlightStudentId === student.id ? 'text-indigo-600 dark:text-indigo-400 text-lg' : 'text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'}`}>{student.name}</span>
                                                         {highlightStudentId === student.id && <span className="text-[10px] font-bold text-indigo-500 animate-pulse">SELECTED</span>}
-                                                    </div>
+                                                    </Link>
                                                 </td>
                                                 <td className="px-8 py-5">
                                                     <span className={`text-sm font-medium transition-colors ${highlightStudentId === student.id ? 'text-indigo-500 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}>{student.id}</span>

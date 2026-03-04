@@ -10,7 +10,13 @@ export async function GET(request: Request) {
         const latestExam = ScoreService.getStudentExamResult(studentId, examId || undefined);
 
         if (!latestExam) {
-            return NextResponse.json({ error: '未找到成绩数据' }, { status: 404 });
+            return NextResponse.json({
+                latest: null,
+                prevSubjects: [],
+                trend: [],
+                exams: [],
+                targetData: null
+            });
         }
 
         const trend = ScoreService.getStudentTrend(studentId);
@@ -36,6 +42,12 @@ export async function GET(request: Request) {
         });
     } catch (error) {
         console.error('API Error:', error);
-        return NextResponse.json({ error: '获取数据失败' }, { status: 500 });
+        return NextResponse.json({
+            latest: null,
+            prevSubjects: [],
+            trend: [],
+            exams: [],
+            targetData: null
+        });
     }
 }
