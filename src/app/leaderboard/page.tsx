@@ -209,7 +209,7 @@ export default function LeaderboardPage() {
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 shadow-sm transition-all">
+<div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 shadow-sm transition-all">
                         <Users className="w-5 h-5 text-slate-400" />
                         <select
                             className="bg-transparent border-none outline-none text-sm font-bold text-slate-700 dark:text-slate-200 w-full cursor-pointer dark:bg-slate-900"
@@ -217,6 +217,8 @@ export default function LeaderboardPage() {
                             onChange={(e) => setSelectedClassFilter(e.target.value)}
                         >
                             <option value="全部" className="dark:bg-slate-800">全部班级</option>
+                            <option value="419" className="dark:bg-slate-800">419班</option>
+                            <option value="415" className="dark:bg-slate-800">415班</option>
                             {availableClasses.map(c => (
                                 <option key={c} value={c} className="dark:bg-slate-800">{c}</option>
                             ))}
@@ -231,8 +233,8 @@ export default function LeaderboardPage() {
                             onChange={(e) => setHighlightStudentId(e.target.value)}
                         >
                             <option value="" className="dark:bg-slate-800">快速定位学生...</option>
-                            {[...rankings].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN')).map(r => (
-                                <option key={r.id} value={r.id} className="dark:bg-slate-800">{r.name} ({r.id})</option>
+{[...rankings].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN')).map(r => (
+                                <option key={r.id} value={r.id} className="dark:bg-slate-800">{r.former_class === '19班' ? '🏷️ ' : '🔖 '}{r.name} ({r.id})</option>
                             ))}
                         </select>
                     </div>

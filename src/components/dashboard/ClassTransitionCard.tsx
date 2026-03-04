@@ -32,7 +32,7 @@ export const ClassTransitionCard: React.FC<ClassTransitionCardProps> = ({ data }
             <div className="bg-slate-50/50 dark:bg-slate-800/50 px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <History className="w-5 h-5 text-indigo-500" />
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">原十九班环境适应性分析</h3>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">419环境适应性分析</h3>
                 </div>
                 <div className="text-[10px] text-slate-400 font-medium bg-white dark:bg-slate-900 px-2 py-1 rounded-md border border-slate-100 dark:border-slate-800">
                     基于前 {data.history.examCount} 次考试均值

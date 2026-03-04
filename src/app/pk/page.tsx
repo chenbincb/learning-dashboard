@@ -37,12 +37,16 @@ export default function PKPage() {
             document.documentElement.classList.add('dark');
         }
 
-        // 加载学生列表和考试列表
+// 加载学生列表和考试列表
         Promise.all([
             API.fetchStudentList(),
             API.fetchStudentScores('66641354') // 用第一个学生初始化考试列表
         ]).then(([studentList, scoresRes]) => {
-            setStudents(studentList);
+            // 按姓名拼音排序
+            const sortedStudents = [...studentList].sort((a, b) => 
+                a.name.localeCompare(b.name, 'zh-CN')
+            );
+            setStudents(sortedStudents);
             setExams(scoresRes.exams || []);
             if (scoresRes.latest) {
                 setSelectedExamId(scoresRes.latest.exam_id.toString());
@@ -165,7 +169,7 @@ export default function PKPage() {
                                     onChange={(e) => updateStudentId(idx, e.target.value)}
                                 >
                                     <option value="" className="text-slate-300">选择学生...</option>
-                                    {students.map((s: any) => {
+{students.map((s: any) => {
                                         const isSelected = selectedStudentIds.includes(s.id) && s.id !== sid;
                                         return (
                                             <option
@@ -174,7 +178,7 @@ export default function PKPage() {
                                                 disabled={isSelected}
                                                 className={`dark:bg-slate-900 ${isSelected ? 'text-slate-300 dark:text-slate-700' : 'text-slate-900 dark:text-slate-200'}`}
                                             >
-                                                {s.name} {isSelected ? '(已选)' : ''}
+                                                {s.former_class === '19班' ? '🏷️ ' : '🔖 '}{s.name} {isSelected ? '(已选)' : ''}
                                             </option>
                                         );
                                     })}

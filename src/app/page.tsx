@@ -227,9 +227,9 @@ export default function Dashboard() {
                                 value={selectedStudentId}
                                 onChange={(e) => handleStudentSelect(e.target.value)}
                             >
-                                {students.slice().sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN')).map((s: any) => (
+{students.slice().sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN')).map((s: any) => (
                                     <option key={s.id} value={s.id} className="dark:bg-slate-900 text-slate-900 dark:text-slate-200">
-                                        {s.name}
+                                        {s.former_class === '19班' ? '🏷️ ' : '🔖 '}{s.name}
                                     </option>
                                 ))}
                             </select>
@@ -277,7 +277,7 @@ export default function Dashboard() {
                             className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-rose-600 hover:text-white transition-all border border-rose-100 dark:border-rose-900/50 no-print"
                         >
                             <Users className="w-4 h-4" />
-                            415
+                            419
                         </Link>
                         <button
                             onClick={toggleTheme}

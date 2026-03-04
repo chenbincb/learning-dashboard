@@ -50,7 +50,7 @@ export const ClassCompareService = {
         };
     },
 
-    /**
+/**
      * 获取所有原 19 班同窗的最新战况 (散作满天星)
      */
     getFormerClassmatesRankings: () => {
@@ -63,6 +63,7 @@ export const ClassCompareService = {
                 s.id,
                 s.name,
                 s.class as current_class,
+                s.former_class,
                 r.grade_rank,
                 r.total_score,
                 e.name as exam_name,
