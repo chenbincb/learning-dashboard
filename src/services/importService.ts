@@ -87,21 +87,25 @@ export const ImportService = {
         const missingCount = subjectMap.get('缺考门次');
         const remarks = subjectMap.get('备注');
 
-        // 2.2 插入考试结果
-        db.prepare('DELETE FROM exam_results WHERE student_id = ? AND exam_id = ?').run(studentIdStr, examId);
+        // 2.2 插入考试结果（先清除旧的科目成绩和考试结果）
+        const existingResult = db.prepare('SELECT id FROM exam_results WHERE student_id = ? AND exam_id = ?').get(studentIdStr, examId) as any;
+        if (existingResult) {
+          db.prepare('DELETE FROM subject_scores WHERE result_id = ?').run(existingResult.id);
+          db.prepare('DELETE FROM exam_results WHERE id = ?').run(existingResult.id);
+        }
         const resultInfo = db.prepare(`
                     INSERT INTO exam_results (
                         student_id, exam_id, total_score,
                         grade_rank, class_rank, elective_rank,
                         other_total_score, other_total_grade_rank, other_total_class_rank,
-                        missing_count, remarks
+                        missing_count, remarks, class_at_exam
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `).run(
           studentIdStr, examId, total_score,
           gradeRank, classRank, electiveRank,
           otherTotal, otherGradeRank, otherClassRank,
-          missingCount, remarks
+          missingCount, remarks, class_name
         );
         const resultId = resultInfo.lastInsertRowid;
 

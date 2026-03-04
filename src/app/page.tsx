@@ -54,9 +54,11 @@ import { AIBriefCard } from '@/components/ai/AIBriefCard';
 import { AISettingsModal } from '@/components/ai/AISettingsModal';
 import { SubjectDoctor } from '@/components/ai/SubjectDoctor';
 import { StrategyPlanner } from '@/components/ai/StrategyPlanner';
+import { ClassTransitionCard } from '@/components/dashboard/ClassTransitionCard';
 
 export default function Dashboard() {
     const [data, setData] = useState<any>(null);
+    const [compareData, setCompareData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [students, setStudents] = useState<any[]>([]);
     const [selectedStudentId, setSelectedStudentId] = useState('66641354');
@@ -127,7 +129,14 @@ export default function Dashboard() {
             const json = await API.fetchStudentScores(studentId, examId, currentTR);
             setData(json);
             if (!examId && json.latest) {
-                setSelectedExamId(json.latest.exam_id.toString());
+                const currentExamId = json.latest.exam_id.toString();
+                setSelectedExamId(currentExamId);
+                // 获取分班对比数据 (仅当有数据返回时生效，Service 内部已做过滤)
+                const comp = await API.fetchClassCompare(studentId, currentExamId);
+                setCompareData(comp);
+            } else if (examId) {
+                const comp = await API.fetchClassCompare(studentId, examId);
+                setCompareData(comp);
             }
         } catch (err) {
             console.error('Fetch error:', err);
@@ -153,11 +162,13 @@ export default function Dashboard() {
     const handleStudentSelect = (id: string) => {
         setSelectedStudentId(id);
         setSelectedExamId(null); // 切换学生时重置考试选择，默认显示最新
+        setCompareData(null); // 重置对比数据
         fetchData(id, null);
     };
 
     const handleExamSelect = (id: string) => {
         setSelectedExamId(id);
+        setCompareData(null); // 重置对比数据
         fetchData(selectedStudentId, id);
     };
 
@@ -216,7 +227,7 @@ export default function Dashboard() {
                                 value={selectedStudentId}
                                 onChange={(e) => handleStudentSelect(e.target.value)}
                             >
-                                {students.map((s: any) => (
+                                {students.slice().sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN')).map((s: any) => (
                                     <option key={s.id} value={s.id} className="dark:bg-slate-900 text-slate-900 dark:text-slate-200">
                                         {s.name}
                                     </option>
@@ -244,7 +255,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3">
                         <label className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 dark:border-emerald-900/50 cursor-pointer no-print">
                             <Plus className="w-4 h-4" />
-                            导入数据
+                            导入
                             <input type="file" accept=".json" className="hidden" onChange={handleImport} />
                         </label>
                         <Link
@@ -252,14 +263,21 @@ export default function Dashboard() {
                             className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50 no-print"
                         >
                             <Trophy className="w-4 h-4" />
-                            排行榜
+                            排行
                         </Link>
                         <Link
                             href="/pk"
                             className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 dark:border-indigo-900/50 no-print"
                         >
                             <Swords className="w-4 h-4" />
-                            进入 PK 场
+                            PK场
+                        </Link>
+                        <Link
+                            href="/former-classmates"
+                            className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-rose-600 hover:text-white transition-all border border-rose-100 dark:border-rose-900/50 no-print"
+                        >
+                            <Users className="w-4 h-4" />
+                            415
                         </Link>
                         <button
                             onClick={toggleTheme}
@@ -288,7 +306,7 @@ export default function Dashboard() {
                             ) : (
                                 <Download className="w-4 h-4" />
                             )}
-                            {isExporting ? '生成中...' : '下载报告'}
+                            {isExporting ? '生成中...' : ''}
                         </button>
                     </div>
                 </div>
@@ -619,34 +637,34 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        {/* 右栏：深度洞察与建议 */}
-                        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors flex flex-col h-full overflow-hidden">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">学科洞察与建议</h3>
-                                <div className="flex items-center gap-2">
-                                    <select
-                                        value={targetRank}
-                                        onChange={(e) => setTargetRank(Number(e.target.value))}
-                                        className="bg-slate-50 dark:bg-slate-800 border-none rounded-md px-2 py-0.5 text-xs font-bold text-indigo-600 outline-none cursor-pointer"
-                                    >
-                                        {[200, 300, 400, 500, 600, 700, 800].map(rank => (
-                                            <option key={rank} value={rank}>前{rank}名</option>
-                                        ))}
-                                    </select>
-                                    <Lightbulb className="w-5 h-5 text-indigo-500" />
-                                </div>
+                    {/* 右栏：深度洞察与建议 */}
+                    <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors flex flex-col h-full overflow-hidden">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">学科洞察与建议</h3>
+                            <div className="flex items-center gap-2">
+                                <select
+                                    value={targetRank}
+                                    onChange={(e) => setTargetRank(Number(e.target.value))}
+                                    className="bg-slate-50 dark:bg-slate-800 border-none rounded-md px-2 py-0.5 text-xs font-bold text-indigo-600 outline-none cursor-pointer"
+                                >
+                                    {[200, 300, 400, 500, 600, 700, 800].map(rank => (
+                                        <option key={rank} value={rank}>前{rank}名</option>
+                                    ))}
+                                </select>
+                                <Lightbulb className="w-5 h-5 text-indigo-500" />
                             </div>
-
-                            <SubjectInsightPanel
-                                subjects={latest.subjects}
-                                prevSubjects={data.prevSubjects}
-                                totalScore={latest.total_score}
-                                targetData={data.targetData}
-                                targetRank={targetRank}
-                                diagnosedIntents={diagnosedIntents}
-                                onAIDiagnose={(sub) => setDiagnosingSubject({ ...sub, subjects: latest.subjects })}
-                            />
                         </div>
+
+                        <SubjectInsightPanel
+                            subjects={latest.subjects}
+                            prevSubjects={data.prevSubjects}
+                            totalScore={latest.total_score}
+                            targetData={data.targetData}
+                            targetRank={targetRank}
+                            diagnosedIntents={diagnosedIntents}
+                            onAIDiagnose={(sub) => setDiagnosingSubject({ ...sub, subjects: latest.subjects })}
+                        />
+                    </div>
                     </div>
                 </section>
 
@@ -877,6 +895,13 @@ export default function Dashboard() {
                     </div>
                 </section>
 
+
+                {/* 分班适应性对比 (挂载至底部建议模块上方) */}
+                {compareData && (
+                    <div className="mb-6">
+                        <ClassTransitionCard data={compareData} />
+                    </div>
+                )}
 
                 {/* Section 3: 学业提升建议 (Full Width at Bottom) */}
                 <section className="pb-12">

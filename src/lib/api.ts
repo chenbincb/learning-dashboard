@@ -75,8 +75,11 @@ export const API = {
         return res.json();
     },
 
-    fetchLeaderboard: async (examId: string, subject: string = '总分'): Promise<LeaderboardItem[]> => {
-        const url = `/api/leaderboard?examId=${examId}&subject=${encodeURIComponent(subject)}`;
+    fetchLeaderboard: async (examId: string, subject: string = '总分', classFilter?: string): Promise<{ rankings: LeaderboardItem[], classes: string[] }> => {
+        let url = `/api/leaderboard?examId=${examId}&subject=${encodeURIComponent(subject)}`;
+        if (classFilter && classFilter !== '全部') {
+            url += `&classFilter=${encodeURIComponent(classFilter)}`;
+        }
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch leaderboard');
         return res.json();
@@ -91,5 +94,23 @@ export const API = {
         const result = await res.json();
         if (!res.ok) throw new Error(result.error || 'Import failed');
         return result;
+    },
+
+    fetchExams: async (): Promise<Exam[]> => {
+        const res = await fetch('/api/exams');
+        if (!res.ok) throw new Error('Failed to fetch exams');
+        return res.json();
+    },
+
+    fetchClassCompare: async (studentId: string, examId: string) => {
+        const res = await fetch(`/api/class-compare?studentId=${studentId}&examId=${examId}`);
+        if (!res.ok) return null;
+        return res.json();
+    },
+
+    fetchFormerClassmates: async () => {
+        const res = await fetch('/api/former-classmates');
+        if (!res.ok) throw new Error('Failed to fetch former classmates');
+        return res.json();
     }
 };

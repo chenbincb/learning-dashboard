@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS students (
     class TEXT,
     class_order INTEGER,
     student_status INTEGER,
-    password TEXT -- 明文存储
+    password TEXT, -- 明文存储
+    former_class TEXT -- 分班前的原始班级
 );
 
 -- 考试表
@@ -35,6 +36,7 @@ CREATE TABLE IF NOT EXISTS exam_results (
     other_total_class_rank INTEGER,
     missing_count INTEGER DEFAULT 0,
     remarks TEXT,
+    class_at_exam TEXT, -- 考试时所在班级（快照）
     FOREIGN KEY (exam_id) REFERENCES exams(id),
     FOREIGN KEY (student_id) REFERENCES students(id),
     UNIQUE(exam_id, student_id)

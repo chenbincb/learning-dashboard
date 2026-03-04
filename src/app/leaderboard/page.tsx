@@ -25,10 +25,12 @@ import Link from 'next/link';
 
 export default function LeaderboardPage() {
     const [rankings, setRankings] = useState<any[]>([]);
+    const [availableClasses, setAvailableClasses] = useState<string[]>([]);
     const [exams, setExams] = useState<any[]>([]);
     const [students, setStudents] = useState<any[]>([]);
     const [selectedExamId, setSelectedExamId] = useState<string>('');
     const [selectedSubject, setSelectedSubject] = useState<string>('总分');
+    const [selectedClassFilter, setSelectedClassFilter] = useState<string>('全部');
     const [highlightStudentId, setHighlightStudentId] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -48,18 +50,17 @@ export default function LeaderboardPage() {
 
     const fetchInitialData = async () => {
         try {
-            // 获取学生列表
+            // 获取全量考试列表
+            const allExams = await API.fetchExams();
+            setExams(allExams);
+            
+            if (allExams.length > 0) {
+                setSelectedExamId(allExams[0].exam_id.toString());
+            }
+
+            // 获取学生列表 (用于其它可能的逻辑，虽然定位现在改用 rankings 了)
             const studentList = await API.fetchStudentList();
             setStudents(studentList);
-
-            // 获取考试列表 (借用第一个学生的 API)
-            if (studentList.length > 0) {
-                const scoresData = await API.fetchStudentScores(studentList[0].id);
-                setExams(scoresData.exams || []);
-                if (scoresData.latest) {
-                    setSelectedExamId(scoresData.latest.exam_id.toString());
-                }
-            }
         } catch (err) {
             console.error('Failed to fetch initial data:', err);
         }
@@ -69,8 +70,9 @@ export default function LeaderboardPage() {
         if (!selectedExamId) return;
         setLoading(true);
         try {
-            const data = await API.fetchLeaderboard(selectedExamId, selectedSubject);
-            setRankings(Array.isArray(data) ? data : []);
+            const data = await API.fetchLeaderboard(selectedExamId, selectedSubject, selectedClassFilter);
+            setRankings(Array.isArray(data.rankings) ? data.rankings : []);
+            setAvailableClasses(Array.isArray(data.classes) ? data.classes : []);
         } catch (err) {
             console.error('Failed to fetch rankings:', err);
         } finally {
@@ -80,7 +82,7 @@ export default function LeaderboardPage() {
 
     useEffect(() => {
         fetchRankings();
-    }, [selectedExamId, selectedSubject]);
+    }, [selectedExamId, selectedSubject, selectedClassFilter]);
 
     // 定位到选中学生
     const scrollToSelected = () => {
@@ -180,7 +182,7 @@ export default function LeaderboardPage() {
                 </div>
 
                 {/* Selectors */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                     <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 shadow-sm transition-all">
                         <Calendar className="w-5 h-5 text-slate-400" />
                         <select
@@ -207,6 +209,20 @@ export default function LeaderboardPage() {
                         </select>
                     </div>
 
+                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 shadow-sm transition-all">
+                        <Users className="w-5 h-5 text-slate-400" />
+                        <select
+                            className="bg-transparent border-none outline-none text-sm font-bold text-slate-700 dark:text-slate-200 w-full cursor-pointer dark:bg-slate-900"
+                            value={selectedClassFilter}
+                            onChange={(e) => setSelectedClassFilter(e.target.value)}
+                        >
+                            <option value="全部" className="dark:bg-slate-800">全部班级</option>
+                            {availableClasses.map(c => (
+                                <option key={c} value={c} className="dark:bg-slate-800">{c}</option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div className={`flex items-center gap-2 bg-white dark:bg-slate-900 border ${highlightStudentId ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-slate-200 dark:border-slate-800'} rounded-2xl px-4 py-3 shadow-sm transition-all`}>
                         <Search className="w-5 h-5 text-slate-400" />
                         <select
@@ -215,8 +231,8 @@ export default function LeaderboardPage() {
                             onChange={(e) => setHighlightStudentId(e.target.value)}
                         >
                             <option value="" className="dark:bg-slate-800">快速定位学生...</option>
-                            {[...students].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN')).map(s => (
-                                <option key={s.id} value={s.id} className="dark:bg-slate-800">{s.name} ({s.id})</option>
+                            {[...rankings].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN')).map(r => (
+                                <option key={r.id} value={r.id} className="dark:bg-slate-800">{r.name} ({r.id})</option>
                             ))}
                         </select>
                     </div>
@@ -314,6 +330,7 @@ export default function LeaderboardPage() {
                                             <th className="px-8 py-4">排名</th>
                                             <th className="px-8 py-4">学生姓名</th>
                                             <th className="px-8 py-4">学号 (考号)</th>
+                                            <th className="px-8 py-4 text-center">班级</th>
                                             <th className="px-8 py-4 text-right">分数</th>
                                             <th className="px-8 py-4 text-right">级排</th>
                                             <th className="px-8 py-4 text-right">班排</th>
@@ -343,6 +360,9 @@ export default function LeaderboardPage() {
                                                 </td>
                                                 <td className="px-8 py-5">
                                                     <span className={`text-sm font-medium transition-colors ${highlightStudentId === student.id ? 'text-indigo-500 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}>{student.id}</span>
+                                                </td>
+                                                <td className="px-8 py-5 text-center">
+                                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full">{student.class}</span>
                                                 </td>
                                                 <td className="px-8 py-5 text-right">
                                                     <span className={`text-lg font-black transition-all ${highlightStudentId === student.id ? 'text-indigo-600 dark:text-indigo-400 scale-110' : 'text-slate-800 dark:text-slate-100'}`}>{student.score}</span>

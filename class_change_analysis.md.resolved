@@ -1,0 +1,157 @@
+# 分班后系统调整方案分析
+
+## 背景
+
+高一上学期末文理分科，陈泓宇从 **19班** 分到 **15班**（仅邹玮琪一个老同学）。后续每次考试，CB 将同时拿到**原19班全员 + 新15班全员**的成绩数据，所有人的班级以分班后的新班级为准。
+
+## 数据库现状
+
+```
+已有考试 4 次（全部只有 19班 50人）:
+  #1 2025年10月月考
+  #2 2025年11月期中
+  #3 2025年12月月考
+  #4 2026年2月期末 ← 已导入19班视角数据
+```
+
+待导入的 415 JSON（15班视角，52人/17个班级）实为考试 #4 的补充数据，需合并。
+
+---
+
+## 核心问题：`students.class` 会被覆盖
+
+### 问题说明
+
+当前 `students` 表只有一个 `class` 字段。导入服务执行的是：
+
+```sql
+UPDATE students SET class = ? WHERE id = ?
+```
+
+**未来导入场景**：下次考试（如高一下月考），陈泓宇的 `class_name` 将是 `15班`。导入后：
+
+| 时间点 | `students.class` | 历史考试班级平均分查询结果 |
+|---|---|---|
+| 导入前 | `19班` | ✅ 正确找到19班同学 |
+| 导入后 | `15班` | ❌ 去找15班同学，但历史考试中15班无数据 |
+
+班级平均分计算的 SQL（[scoreService.ts#L47](file:///Users/chenbin/Desktop/learning-dashboard/src/services/scoreService.ts#L47)）：
+
+```sql
+WHERE s.class = (SELECT class FROM students WHERE id = ?)
+--     ↑ 用的是学生当前班级，不是考试时的班级
+```
+
+**结果**：历史考试的班级平均分、雷达图、差距分析全部失真。
+
+---
+
+## 方案：`exam_results` 增加 `class_at_exam` 字段
+
+### 设计思路
+
+> **每次考试记录"快照"——学生在那次考试时的班级。**
+
+```sql
+ALTER TABLE exam_results ADD COLUMN class_at_exam TEXT;
+```
+
+### 具体例子说明
+
+导入后 `exam_results` 表的数据：
+
+| exam_id | student_id | student_name | class_at_exam |
+|---|---|---|---|
+| 1 (10月月考) | 66641354 | 陈泓宇 | **19班** |
+| 2 (11月期中) | 66641354 | 陈泓宇 | **19班** |
+| 3 (12月月考) | 66641354 | 陈泓宇 | **19班** |
+| 4 (2月期末) | 66641354 | 陈泓宇 | **19班** |
+| 5 (下学期月考) | 66641354 | 陈泓宇 | **15班** ← 分班后 |
+
+### 班级平均分查询改造（核心变更）
+
+改造前：
+```sql
+-- 用 students.class（当前值）找同班同学
+WHERE s.class = (SELECT class FROM students WHERE id = ?)
+```
+
+改造后：
+```sql
+-- 用 exam_results.class_at_exam（考试时快照）找同班同学
+WHERE er.class_at_exam = (
+  SELECT class_at_exam FROM exam_results 
+  WHERE student_id = ? AND exam_id = ?
+)
+```
+
+**效果**：
+- 查历史考试 → 用 `19班` 找同学 → ✅ 正确
+- 查新考试 → 用 `15班` 找同学 → ✅ 正确
+
+### 排行榜改造
+
+同理，排行榜中显示的班级和班级排名：
+- 改用 `exam_results.class_at_exam` 代替 `students.class`
+- `PARTITION BY` 班内排名也改用 `class_at_exam`
+
+### `students.class` 不删除
+
+保留 `students.class`，始终更新为最新班级，用于：
+- 默认展示学生当前班级信息
+- 非考试相关的 UI 显示
+
+### 历史数据回填
+
+已有 4 次考试数据全部回填 `class_at_exam = '19班'`：
+
+```sql
+UPDATE exam_results SET class_at_exam = '19班';
+```
+
+### 导入逻辑改造
+
+[importService.ts](file:///Users/chenbin/Desktop/learning-dashboard/src/services/importService.ts) 的 `INSERT INTO exam_results` 增加 `class_at_exam` 字段，值取自 JSON 中的 `class_name`。
+
+---
+
+## 涉及修改的文件清单
+
+| 文件 | 改动内容 |
+|---|---|
+| [schema.sql](file:///Users/chenbin/Desktop/learning-dashboard/src/lib/schema.sql) | `exam_results` 表增加 `class_at_exam TEXT` |
+| [importService.ts](file:///Users/chenbin/Desktop/learning-dashboard/src/services/importService.ts) | INSERT 语句加入 `class_at_exam`，值来自 `class_name` |
+| [scoreService.ts](file:///Users/chenbin/Desktop/learning-dashboard/src/services/scoreService.ts) | 3 处查询改用 `class_at_exam`：班级平均分、排行榜、PK |
+| [page.tsx](file:///Users/chenbin/Desktop/learning-dashboard/src/app/page.tsx) | 展示学生班级时区分"当前班级"和"考试时班级" |
+| [leaderboard/page.tsx](file:///Users/chenbin/Desktop/learning-dashboard/src/app/leaderboard/page.tsx) | 班级列显示 `class_at_exam` |
+| 数据库迁移脚本 | ALTER TABLE + 历史数据回填 |
+
+---
+
+## 415 JSON 导入注意事项
+
+1. **examName 需改为 `2026年2月期末`**，与已有考试 #4 对齐
+2. 导入后考试 #4 学生数从 50 → ~100（去重后）
+3. 陈泓宇/邹玮琪两份 JSON 中都有，按 `DELETE + INSERT` 逻辑会用 415 数据覆盖（分数一致，不影响）
+4. **必须先完成 `class_at_exam` 改造再导入**，否则 `class_at_exam` 数据会缺失
+
+---
+
+## 新功能机会（有了两个班数据后）
+
+### 1. 班级筛选器
+排行榜和成绩页增加班级下拉，支持按 `19班`、`15班` 或 `全部` 筛选。
+
+### 2. 分班前后对比看板
+陈泓宇在 19班环境 vs 15班环境的表现变化（班级排名、相对位置）。
+
+### 3. 老同学追踪
+追踪原 19班同学分散到各班后的发展，如果数据中包含的话。
+
+### 4. 更大样本的排名分析
+从 50人扩大到 ~100人的排名，更接近年级真实水平。
+
+---
+
+> [!IMPORTANT]
+> 建议执行顺序：**先做 `class_at_exam` 改造 + 历史回填 → 再导入 415 JSON**。否则历史数据会立即失真。

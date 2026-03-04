@@ -38,15 +38,16 @@ export const ScoreService = {
             WHERE result_id = ?
         `).all(latestExam.id) as any[];
 
-        // 3. 实时计算班级平均分
+        // 3. 实时计算班级平均分（使用考试时班级快照）
         const classAvgData = db.prepare(`
             SELECT ss.subject, AVG(ss.score) as avg_score
             FROM subject_scores ss
             JOIN exam_results er ON ss.result_id = er.id
-            JOIN students s ON er.student_id = s.id
-            WHERE er.exam_id = ? AND s.class = (SELECT class FROM students WHERE id = ?)
+            WHERE er.exam_id = ? AND er.class_at_exam = (
+                SELECT class_at_exam FROM exam_results WHERE student_id = ? AND exam_id = ?
+            )
             GROUP BY ss.subject
-        `).all(Number(latestExam.exam_id), studentId) as any[];
+        `).all(Number(latestExam.exam_id), studentId, Number(latestExam.exam_id)) as any[];
 
         // 4. 实时计算年级平均分 (难度系数)
         const gradeAvgData = db.prepare(`
@@ -120,6 +121,16 @@ export const ScoreService = {
         return enrichedExams;
     },
 
+    // 获取所有考试列表
+    getAllExams: () => {
+        const db = getDb();
+        return db.prepare(`
+            SELECT id as exam_id, name, date
+            FROM exams
+            ORDER BY IFNULL(date, '') DESC, id DESC
+        `).all();
+    },
+
     // 获取特定学生的所有考试列表
     getStudentExams: (studentId: string) => {
         const db = getDb();
@@ -156,8 +167,20 @@ export const ScoreService = {
         `).all(prevExamResult.id) as any[];
     },
 
+    // 获取某次考试的所有班级列表
+    getExamClasses: (examId: string): string[] => {
+        const db = getDb();
+        const records = db.prepare(`
+            SELECT DISTINCT class_at_exam 
+            FROM exam_results 
+            WHERE exam_id = ? AND class_at_exam IS NOT NULL
+            ORDER BY class_at_exam
+        `).all(examId) as any[];
+        return records.map(r => r.class_at_exam);
+    },
+
     // 获取排行榜
-    getLeaderboard: (examId: string, subject: string = '总分') => {
+    getLeaderboard: (examId: string, subject: string = '总分', classFilter?: string) => {
         const db = getDb();
         let query = '';
         const params: any[] = [];
@@ -172,13 +195,14 @@ export const ScoreService = {
 
         if (subject === '总分') {
             query = `
-                SELECT s.id, s.name, s.class, r.total_score as score, r.grade_rank as rank, r.class_rank
+                SELECT s.id, s.name, r.class_at_exam as class, r.total_score as score, r.grade_rank as rank, r.class_rank
                 FROM exam_results r
                 JOIN students s ON r.student_id = s.id
-                WHERE r.exam_id = ?
+                WHERE r.exam_id = ? ${classFilter && classFilter !== '全部' ? 'AND r.class_at_exam = ?' : ''}
                 ORDER BY r.total_score DESC
             `;
             params.push(examId);
+            if (classFilter && classFilter !== '全部') params.push(classFilter);
         } else if (combinations[subject]) {
             // 组合排名：计算指定6门科目的总分
             const targetSubjects = combinations[subject];
@@ -186,29 +210,31 @@ export const ScoreService = {
 
             query = `
                 SELECT 
-                    s.id, s.name, s.class, 
+                    s.id, s.name, r.class_at_exam as class, 
                     SUM(ss.score) as score,
                     RANK() OVER (ORDER BY SUM(ss.score) DESC) as rank,
-                    RANK() OVER (PARTITION BY s.class ORDER BY SUM(ss.score) DESC) as class_rank
+                    RANK() OVER (PARTITION BY r.class_at_exam ORDER BY SUM(ss.score) DESC) as class_rank
                 FROM subject_scores ss
                 JOIN exam_results r ON ss.result_id = r.id
                 JOIN students s ON r.student_id = s.id
-                WHERE r.exam_id = ? AND ss.subject IN (${placeholders})
+                WHERE r.exam_id = ? AND ss.subject IN (${placeholders}) ${classFilter && classFilter !== '全部' ? 'AND r.class_at_exam = ?' : ''}
                 GROUP BY s.id
                 ORDER BY score DESC
             `;
             params.push(examId, ...targetSubjects);
+            if (classFilter && classFilter !== '全部') params.push(classFilter);
         } else {
             // 单科排名
             query = `
-                SELECT s.id, s.name, s.class, ss.score, ss.grade_rank as rank, ss.class_rank
+                SELECT s.id, s.name, r.class_at_exam as class, ss.score, ss.grade_rank as rank, ss.class_rank
                 FROM subject_scores ss
                 JOIN exam_results r ON ss.result_id = r.id
                 JOIN students s ON r.student_id = s.id
-                WHERE r.exam_id = ? AND ss.subject = ?
+                WHERE r.exam_id = ? AND ss.subject = ? ${classFilter && classFilter !== '全部' ? 'AND r.class_at_exam = ?' : ''}
                 ORDER BY ss.score DESC
             `;
             params.push(examId, subject);
+            if (classFilter && classFilter !== '全部') params.push(classFilter);
         }
 
         return db.prepare(query).all(...params);
