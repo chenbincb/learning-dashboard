@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
     TrendingUp,
@@ -57,7 +57,7 @@ import { SubjectDoctor } from '@/components/ai/SubjectDoctor';
 import { StrategyPlanner } from '@/components/ai/StrategyPlanner';
 import { ClassTransitionCard } from '@/components/dashboard/ClassTransitionCard';
 
-export default function Dashboard() {
+function DashboardContent() {
     const searchParams = useSearchParams();
     const urlStudentId = searchParams.get('studentId');
     const [data, setData] = useState<any>(null);
