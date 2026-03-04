@@ -279,9 +279,9 @@ export default function LeaderboardPage() {
                                             <span className="text-xs font-black text-white">2</span>
                                         </div>
                                     </div>
-                                    <div className={`text-center bg-white dark:bg-slate-900 pt-6 pb-4 px-6 rounded-t-3xl border-x border-t ${highlightStudentId === podium[1].id ? 'border-indigo-500/50 bg-indigo-50/10 dark:bg-indigo-900/10' : 'border-slate-100 dark:border-slate-800'} w-full min-h-[140px] flex flex-col items-center shadow-lg shadow-slate-200/50 dark:shadow-none relative transition-colors`}>
+<div className={`text-center bg-white dark:bg-slate-900 pt-6 pb-4 px-6 rounded-t-3xl border-x border-t ${highlightStudentId === podium[1].id ? 'border-indigo-500/50 bg-indigo-50/10 dark:bg-indigo-900/10' : 'border-slate-100 dark:border-slate-800'} w-full min-h-[140px] flex flex-col items-center shadow-lg shadow-slate-200/50 dark:shadow-none relative transition-colors`}>
                                         <div className="absolute -top-3 px-3 py-1 bg-slate-300 dark:bg-slate-600 rounded-full text-[10px] font-bold text-white uppercase tracking-wider">亚军</div>
-                                        <h3 className="font-bold text-slate-800 dark:text-white mb-1">{podium[1].name}</h3>
+                                        <Link href={`/?studentId=${podium[1].id}`} className="font-bold text-slate-800 dark:text-white mb-1 hover:opacity-80 transition-opacity">{podium[1].name}</Link>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">学号: {podium[1].id}</p>
                                         <div className="text-2xl font-black text-slate-700 dark:text-slate-200">{podium[1].score}<span className="text-[10px] ml-1 font-bold">分</span></div>
                                     </div>
@@ -300,9 +300,9 @@ export default function LeaderboardPage() {
                                             <span className="text-sm font-black text-white">1</span>
                                         </div>
                                     </div>
-                                    <div className={`text-center bg-white dark:bg-slate-900 pt-8 pb-6 px-6 rounded-t-3xl border-x border-t ${highlightStudentId === podium[0].id ? 'border-indigo-500/50 bg-indigo-50/10 dark:bg-indigo-900/10' : 'border-slate-200 dark:border-slate-700'} w-full min-h-[180px] flex flex-col items-center shadow-[0_-10px_40px_-15px_rgba(251,191,36,0.3)] dark:shadow-none relative transition-colors`}>
+<div className={`text-center bg-white dark:bg-slate-900 pt-8 pb-6 px-6 rounded-t-3xl border-x border-t ${highlightStudentId === podium[0].id ? 'border-indigo-500/50 bg-indigo-50/10 dark:bg-indigo-900/10' : 'border-slate-200 dark:border-slate-700'} w-full min-h-[180px] flex flex-col items-center shadow-[0_-10px_40px_-15px_rgba(251,191,36,0.3)] dark:shadow-none relative transition-colors`}>
                                         <div className="absolute -top-3 px-4 py-1.5 bg-amber-400 rounded-full text-xs font-bold text-white uppercase tracking-widest animate-pulse">冠军</div>
-                                        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 tracking-tight">{podium[0].name}</h3>
+                                        <Link href={`/?studentId=${podium[0].id}`} className="text-xl font-black text-slate-900 dark:text-white mb-1 tracking-tight hover:opacity-80 transition-opacity">{podium[0].name}</Link>
                                         <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3">学号: {podium[0].id}</p>
                                         <div className="text-4xl font-black text-amber-500 drop-shadow-sm">{podium[0].score}<span className="text-xs ml-1 font-bold">分</span></div>
                                     </div>
