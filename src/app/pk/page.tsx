@@ -216,10 +216,9 @@ export default function PKPage() {
                                 <Plus className="w-4 h-4" />
                                 添加学生
                             </button>
-                        )}
+)}
                     </div>
                 </div>
-            </header>
 
             <main className={`${selectedStudentIds.length === 4 ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto p-4 md:p-8`}>
                 {loading ? (
