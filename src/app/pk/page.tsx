@@ -154,10 +154,30 @@ export default function PKPage() {
                                 )}
                             </button>
                         </div>
-                    </div>
+</div>
+                </div>
+            </header>
 
-                    {/* Student Selectors Row */}
-                    <div className="flex flex-wrap items-center gap-3">
+            {/* Exam & Student Selectors */}
+            <div className={`${selectedStudentIds.length === 4 ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto px-4 md:px-8 py-6`}>
+                {/* Exam Selector */}
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all mb-4">
+                    <Calendar className="w-5 h-5 text-slate-400" />
+                    <select
+                        className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
+                        value={selectedExamId || ''}
+                        onChange={(e) => setSelectedExamId(e.target.value)}
+                    >
+                        {exams.map((e: any) => (
+                            <option key={e.exam_id} value={e.exam_id} className="dark:bg-slate-900 text-slate-900 dark:text-slate-200">
+                                {e.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Student Selectors Row */}
+                <div className="flex flex-wrap items-center gap-3">
                         {selectedStudentIds.map((sid, idx) => (
                             <div key={idx} className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
                                 <Users className="w-4 h-4 text-slate-400" />
