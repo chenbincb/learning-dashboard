@@ -120,29 +120,27 @@ export default function PKPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            {/* Exam Selector */}
-                            <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
-                                <Calendar className="w-4 h-4 text-slate-400" />
-                                <select
-                                    className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer min-w-[140px]"
-                                    value={selectedExamId || ''}
-                                    onChange={(e) => setSelectedExamId(e.target.value)}
-                                >
-                                    {exams.map((e: any) => (
-                                        <option key={e.exam_id} value={e.exam_id} className="dark:bg-slate-900 text-slate-900 dark:text-slate-200">
-                                            {e.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
+<div className="flex items-center gap-3">
                             <Link
                                 href="/leaderboard"
                                 className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50 cursor-pointer"
                             >
                                 <Trophy className="w-4 h-4" />
-                                排行榜
+                                排行
+                            </Link>
+                            <Link
+                                href="/pk"
+                                className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-xl text-sm font-bold border border-indigo-100 dark:border-indigo-900/50 cursor-pointer"
+                            >
+                                <Swords className="w-4 h-4" />
+                                PK场
+                            </Link>
+                            <Link
+                                href="/former-classmates"
+                                className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-rose-600 hover:text-white transition-all border border-rose-100 dark:border-rose-900/50 cursor-pointer"
+                            >
+                                <Users className="w-4 h-4" />
+                                419
                             </Link>
                             <button
                                 onClick={toggleTheme}

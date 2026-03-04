@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { API } from '@/lib/api';
-import { Users, Trophy, ArrowLeft, Loader2, Search, MapPin, Target, ArrowUp } from 'lucide-react';
+import { Users, Trophy, ArrowLeft, Loader2, Search, MapPin, Target, ArrowUp, Swords, Sun, Moon } from 'lucide-react';
 import Link from 'next/link';
 
 export default function FormerClassmatesPage() {
@@ -11,9 +11,19 @@ export default function FormerClassmatesPage() {
     const [highlightStudentId, setHighlightStudentId] = useState('');
     const [sortBy, setSortBy] = useState<'rank' | 'pinyin'>('rank');
     const [showScrollTop, setShowScrollTop] = useState(false);
+    const [theme, setTheme] = useState<'light' | 'dark'>('light');
     const itemRefs = React.useRef<{ [key: string]: HTMLDivElement | null }>({});
 
     useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+        if (savedTheme) {
+            setTheme(savedTheme);
+            if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            setTheme('dark');
+            document.documentElement.classList.add('dark');
+        }
+
         const fetchData = async () => {
             try {
                 const data = await API.fetchFormerClassmates();
@@ -32,6 +42,13 @@ export default function FormerClassmatesPage() {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    const toggleTheme = () => {
+        const newTheme = theme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+        document.documentElement.classList.toggle('dark');
+    };
 
     // 处理定位滚动
     const scrollToHighlight = (id: string) => {
@@ -64,7 +81,7 @@ export default function FormerClassmatesPage() {
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             {/* Header */}
             <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md py-4 border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 transition-colors">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
+<div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link 
                             href="/"
@@ -79,6 +96,40 @@ export default function FormerClassmatesPage() {
                             </h1>
                             <p className="text-xs text-slate-500 dark:text-slate-400">昔日同窗在全校新环境下的最新动态</p>
                         </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/leaderboard"
+                            className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50 cursor-pointer"
+                        >
+                            <Trophy className="w-4 h-4" />
+                            排行
+                        </Link>
+                        <Link
+                            href="/pk"
+                            className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 dark:border-indigo-900/50 cursor-pointer"
+                        >
+                            <Swords className="w-4 h-4" />
+                            PK场
+                        </Link>
+                        <Link
+                            href="/former-classmates"
+                            className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-4 py-2 rounded-xl text-sm font-bold border border-rose-100 dark:border-rose-900/50 cursor-pointer"
+                        >
+                            <Users className="w-4 h-4" />
+                            419
+                        </Link>
+                        <button
+                            onClick={toggleTheme}
+                            className="group p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-slate-600 dark:text-slate-300 hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-slate-50 dark:hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
+                            title={theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'}
+                        >
+                            {theme === 'light' ? (
+                                <Moon className="w-5 h-5 group-hover:text-indigo-500 group-hover:rotate-12 transition-all duration-300" />
+                            ) : (
+                                <Sun className="w-5 h-5 group-hover:text-amber-500 group-hover:rotate-45 transition-all duration-300" />
+                            )}
+                        </button>
                     </div>
                 </div>
             </header>

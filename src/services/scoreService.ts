@@ -194,7 +194,7 @@ export const ScoreService = {
         };
 
         const filterClause = (classFilter && classFilter !== '全部')
-            ? (classFilter === '419' ? 'AND s.former_class = ?' : classFilter === '415' ? 'AND s.former_class = ?' : 'AND r.class_at_exam = ?')
+            ? (classFilter === '419' ? 'AND s.former_class = ?' : classFilter === '415' ? 'AND (s.former_class != ? OR s.former_class IS NULL)' : 'AND r.class_at_exam = ?')
             : '';
 
         if (subject === '总分') {
@@ -207,7 +207,7 @@ export const ScoreService = {
             `;
             params.push(examId);
             if (classFilter && classFilter !== '全部') {
-                params.push(classFilter === '419' ? '19班' : classFilter === '415' ? '15班' : classFilter);
+                params.push(classFilter === '419' ? '19班' : classFilter === '415' ? '19班' : classFilter);
             }
         } else if (combinations[subject]) {
             // 组合排名：计算指定6门科目的总分
@@ -229,7 +229,7 @@ export const ScoreService = {
             `;
             params.push(examId, ...targetSubjects);
             if (classFilter && classFilter !== '全部') {
-                params.push(classFilter === '419' ? '19班' : classFilter === '415' ? '15班' : classFilter);
+                params.push(classFilter === '419' ? '19班' : classFilter === '415' ? '19班' : classFilter);
             }
         } else {
             // 单科排名
@@ -243,7 +243,7 @@ export const ScoreService = {
             `;
             params.push(examId, subject);
             if (classFilter && classFilter !== '全部') {
-                params.push(classFilter === '419' ? '19班' : classFilter === '415' ? '15班' : classFilter);
+                params.push(classFilter === '419' ? '19班' : classFilter === '415' ? '19班' : classFilter);
             }
         }
 
