@@ -954,3 +954,13 @@ function ExamItem({ name, date, score }: any) {
         </div>
     );
 }
+
+export default function Dashboard() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-200 dark:bg-slate-950 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>}>
+            <DashboardContent />
+        </Suspense>
+    );
+}
