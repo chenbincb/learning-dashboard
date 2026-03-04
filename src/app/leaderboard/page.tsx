@@ -320,9 +320,9 @@ export default function LeaderboardPage() {
                                             <span className="text-xs font-black text-white">3</span>
                                         </div>
                                     </div>
-                                    <div className={`text-center bg-white dark:bg-slate-900 pt-6 pb-4 px-6 rounded-t-3xl border-x border-t ${highlightStudentId === podium[2].id ? 'border-indigo-500/50 bg-indigo-50/10 dark:bg-indigo-900/10' : 'border-slate-100 dark:border-slate-800'} w-full min-h-[140px] flex flex-col items-center shadow-lg shadow-slate-200/50 dark:shadow-none relative transition-colors`}>
+<div className={`text-center bg-white dark:bg-slate-900 pt-6 pb-4 px-6 rounded-t-3xl border-x border-t ${highlightStudentId === podium[2].id ? 'border-indigo-500/50 bg-indigo-50/10 dark:bg-indigo-900/10' : 'border-slate-100 dark:border-slate-800'} w-full min-h-[140px] flex flex-col items-center shadow-lg shadow-slate-200/50 dark:shadow-none relative transition-colors`}>
                                         <div className="absolute -top-3 px-3 py-1 bg-orange-300 dark:bg-orange-800 rounded-full text-[10px] font-bold text-white uppercase tracking-wider">季军</div>
-                                        <h3 className="font-bold text-slate-800 dark:text-white mb-1">{podium[2].name}</h3>
+                                        <Link href={`/?studentId=${podium[2].id}`} className="font-bold text-slate-800 dark:text-white mb-1 hover:opacity-80 transition-opacity">{podium[2].name}</Link>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">学号: {podium[2].id}</p>
                                         <div className="text-2xl font-black text-orange-400">{podium[2].score}<span className="text-[10px] ml-1 font-bold">分</span></div>
                                     </div>
