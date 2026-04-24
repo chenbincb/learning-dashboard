@@ -122,13 +122,13 @@ export function SubjectInsightPanel({
     return (
         <div className="flex-1 flex flex-col justify-between py-2 min-h-0 overflow-hidden font-sans">
 
-            <div className="p-2 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/30 rounded-lg border border-indigo-100/50 dark:border-indigo-800/30">
-                <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-snug">
+            <div className="p-2.5 bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/30 rounded-lg border border-indigo-100/50 dark:border-indigo-800/30">
+                <p className="text-[11px] md:text-xs font-medium text-slate-600 dark:text-slate-300 leading-relaxed md:line-clamp-3">
                     {smartInsight}
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-5 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 pt-3">
                 <div className="space-y-1">
                     <div className="flex items-center gap-1.5 mb-1">
                         <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />

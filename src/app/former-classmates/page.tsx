@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { API } from '@/lib/api';
-import { Users, Trophy, ArrowLeft, Loader2, Search, MapPin, Target, ArrowUp, Swords, Sun, Moon } from 'lucide-react';
+import { Users, Trophy, ArrowLeft, Loader2, Search, MapPin, Target, ArrowUp, Swords, Sun, Moon, X, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 
 export default function FormerClassmatesPage() {
@@ -12,6 +12,7 @@ export default function FormerClassmatesPage() {
     const [sortBy, setSortBy] = useState<'rank' | 'pinyin'>('rank');
     const [showScrollTop, setShowScrollTop] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const itemRefs = React.useRef<{ [key: string]: HTMLAnchorElement | null }>({});
 
 const cardColors = [
@@ -92,56 +93,65 @@ const cardColors = [
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md py-4 border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 transition-colors">
-<div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link 
-                            href="/"
-                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </Link>
-                        <div>
-                            <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <Users className="w-6 h-6 text-rose-500" />
-                                419班同窗轨迹
-                            </h1>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">昔日同窗在全校新环境下的最新动态</p>
+            <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md py-3 md:py-4 border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 transition-colors w-full">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center justify-between w-full md:w-auto">
+                        <div className="flex items-center gap-4">
+                            <Link href="/" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500">
+                                <ArrowLeft className="w-5 h-5" />
+                            </Link>
+                            <div className="flex flex-col">
+                                <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <Users className="w-5 h-5 md:w-6 md:h-6 text-rose-500" />
+                                    419 同窗
+                                </h1>
+                                <p className="text-slate-500 dark:text-slate-400 text-[10px] md:text-xs">昔日同窗在全校环境下的最新动态</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 md:hidden">
+                            <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-400">
+                                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                            </button>
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="p-2 text-slate-600 dark:text-slate-400"
+                            >
+                                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <LayoutGrid className="w-6 h-6" />}
+                            </button>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <Link
-                            href="/leaderboard"
-                            className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50 cursor-pointer"
-                        >
-                            <Trophy className="w-4 h-4" />
-                            排行
-                        </Link>
-                        <Link
-                            href="/pk"
-                            className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 dark:border-indigo-900/50 cursor-pointer"
-                        >
-                            <Swords className="w-4 h-4" />
-                            PK场
-                        </Link>
-                        <Link
-                            href="/former-classmates"
-                            className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-4 py-2 rounded-xl text-sm font-bold border border-rose-100 dark:border-rose-900/50 cursor-pointer"
-                        >
-                            <Users className="w-4 h-4" />
-                            419
-                        </Link>
-                        <button
-                            onClick={toggleTheme}
-                            className="group p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-slate-600 dark:text-slate-300 hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-slate-50 dark:hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
-                            title={theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'}
-                        >
-                            {theme === 'light' ? (
-                                <Moon className="w-5 h-5 group-hover:text-indigo-500 group-hover:rotate-12 transition-all duration-300" />
-                            ) : (
-                                <Sun className="w-5 h-5 group-hover:text-amber-500 group-hover:rotate-45 transition-all duration-300" />
-                            )}
-                        </button>
+
+                    <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} md:flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto pb-4 md:pb-0`}>
+                        <div className="grid grid-cols-2 md:flex items-center gap-2 w-full md:w-auto">
+                            <Link
+                                href="/leaderboard"
+                                className="flex items-center justify-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50"
+                            >
+                                <Trophy className="w-4 h-4" />
+                                <span>排行</span>
+                            </Link>
+                            <Link
+                                href="/pk"
+                                className="hidden md:flex items-center justify-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 dark:border-indigo-900/50"
+                            >
+                                <Swords className="w-4 h-4" />
+                                <span>PK场</span>
+                            </Link>
+                            <Link
+                                href="/former-classmates"
+                                className="flex items-center justify-center gap-2 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-3 py-2 rounded-xl text-xs font-bold border border-rose-100 dark:border-rose-900/50"
+                            >
+                                <Users className="w-4 h-4" />
+                                <span>419</span>
+                            </Link>
+                            <button
+                                onClick={toggleTheme}
+                                className="hidden md:block p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+                            >
+                                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>

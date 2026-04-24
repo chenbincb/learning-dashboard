@@ -12,7 +12,8 @@ import {
     TrendingUp,
     TrendingDown,
     Swords,
-    Trophy
+    Trophy,
+    LayoutGrid
 } from 'lucide-react';
 import { API } from '@/lib/api';
 import { SubjectProgress } from '@/components/SubjectProgress';
@@ -26,6 +27,7 @@ export default function PKPage() {
     const [studentsData, setStudentsData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -104,55 +106,64 @@ export default function PKPage() {
     return (
         <div className="min-h-screen bg-slate-200 dark:bg-slate-950 transition-colors duration-300">
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-md py-4 border-b border-slate-300/50 dark:border-slate-800/50 px-4 md:px-8 transition-colors w-full">
-                <div className={`${selectedStudentIds.length === 4 ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto flex flex-col gap-6`}>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <header className="sticky top-0 z-50 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-md py-3 md:py-4 border-b border-slate-300/50 dark:border-slate-800/50 px-4 md:px-8 transition-colors w-full">
+                <div className={`${selectedStudentIds.length === 4 ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4`}>
+                    <div className="flex items-center justify-between w-full md:w-auto">
                         <div className="flex items-center gap-4">
-                            <Link
-                                href="/"
-                                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-600 dark:text-slate-400"
-                            >
+                            <Link href="/" className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-600 dark:text-slate-400">
                                 <ArrowLeft className="w-5 h-5" />
                             </Link>
-                            <div>
-                                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">学情看板 · PK 场</h1>
-                                <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">横向对比，竞争中共同进步。</p>
+                            <div className="flex flex-col">
+                                <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <Swords className="w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
+                                    PK 场
+                                </h1>
+                                <p className="text-slate-500 dark:text-slate-400 text-[10px] md:text-xs">横向对比，竞争中共同进步。</p>
                             </div>
                         </div>
 
-<div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 md:hidden">
+                            <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-400">
+                                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                            </button>
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="p-2 text-slate-600 dark:text-slate-400"
+                            >
+                                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <LayoutGrid className="w-6 h-6" />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} md:flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto pb-4 md:pb-0`}>
+                        <div className="grid grid-cols-2 md:flex items-center gap-2 w-full md:w-auto">
                             <Link
                                 href="/leaderboard"
-                                className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50 cursor-pointer"
+                                className="flex items-center justify-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50"
                             >
                                 <Trophy className="w-4 h-4" />
-                                排行
+                                <span>排行</span>
                             </Link>
                             <Link
                                 href="/pk"
-                                className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-xl text-sm font-bold border border-indigo-100 dark:border-indigo-900/50 cursor-pointer"
+                                className="flex items-center justify-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold border border-indigo-100 dark:border-indigo-900/50"
                             >
                                 <Swords className="w-4 h-4" />
-                                PK场
+                                <span>PK场</span>
                             </Link>
                             <Link
                                 href="/former-classmates"
-                                className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-rose-600 hover:text-white transition-all border border-rose-100 dark:border-rose-900/50 cursor-pointer"
+                                className="flex items-center justify-center gap-2 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-3 py-2 rounded-xl text-sm font-bold hover:bg-rose-600 hover:text-white transition-all border border-rose-100 dark:border-rose-900/50"
                             >
                                 <Users className="w-4 h-4" />
-                                419
+                                <span>419</span>
                             </Link>
                             <button
                                 onClick={toggleTheme}
-                                className="group p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm text-slate-600 dark:text-slate-300 hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-slate-50 dark:hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
-                                title={theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'}
+                                className="hidden md:block p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-all"
                             >
-                                {theme === 'light' ? (
-                                    <Moon className="w-5 h-5 group-hover:text-indigo-500 group-hover:rotate-12 transition-all duration-300" />
-                                ) : (
-                                    <Sun className="w-5 h-5 group-hover:text-amber-500 group-hover:rotate-45 transition-all duration-300" />
-                                )}
-</button>
+                                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                            </button>
                         </div>
                     </div>
                 </div>

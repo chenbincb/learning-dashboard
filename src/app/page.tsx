@@ -75,6 +75,7 @@ function DashboardContent() {
     const [isStrategyOpen, setIsStrategyOpen] = useState(false);
     const [diagnosingSubject, setDiagnosingSubject] = useState<any>(null);
     const [diagnosedIntents, setDiagnosedIntents] = useState<string[]>([]);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const fetchDiagnosedIntents = async () => {
         if (!selectedStudentId || !selectedExamId) return;
@@ -213,104 +214,116 @@ function DashboardContent() {
     return (
         <div className="min-h-screen bg-slate-200 dark:bg-slate-950 transition-colors duration-300">
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-md py-4 border-b border-slate-300/50 dark:border-slate-800/50 px-4 md:px-8 transition-colors w-full">
+            <header className="sticky top-0 z-50 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-md py-3 md:py-4 border-b border-slate-300/50 dark:border-slate-800/50 px-4 md:px-8 transition-colors w-full">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex flex-col md:flex-row md:items-center gap-6">
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">学情看板</h1>
-                            <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">欢迎回来，{latest.student_name}。这是您的学业概览。</p>
+                    <div className="flex items-center justify-between w-full md:w-auto">
+                        <div className="flex flex-col">
+                            <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">学情看板</h1>
+                            <p className="text-slate-500 dark:text-slate-400 text-[10px] md:text-xs mt-0.5">欢迎回来，{latest.student_name}。</p>
                         </div>
 
-
-                        {/* Student Selector */}
-                        <div className={`flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all no-print`}>
-                            <Users className="w-4 h-4 text-slate-400" />
-                            <select
-                                className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer min-w-[100px] disabled:cursor-not-allowed"
-                                value={selectedStudentId}
-                                onChange={(e) => handleStudentSelect(e.target.value)}
+                        <div className="flex items-center gap-2 md:hidden">
+                            <button
+                                onClick={toggleTheme}
+                                className="p-2 text-slate-600 dark:text-slate-400"
                             >
-{students.slice().sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN')).map((s: any) => (
-                                    <option key={s.id} value={s.id} className="dark:bg-slate-900 text-slate-900 dark:text-slate-200">
-                                        {s.former_class === '19班' ? '🏷️ ' : '🔖 '}{s.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Exam Selector */}
-                        <div className={`flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all no-print`}>
-                            <Calendar className="w-4 h-4 text-slate-400" />
-                            <select
-                                className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer min-w-[140px] disabled:cursor-not-allowed"
-                                value={selectedExamId || ''}
-                                onChange={(e) => handleExamSelect(e.target.value)}
+                                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                            </button>
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="p-2 text-slate-600 dark:text-slate-400"
                             >
-                                {exams.map((e: any) => (
-                                    <option key={e.exam_id} value={e.exam_id} className="dark:bg-slate-900 text-slate-900 dark:text-slate-200">
-                                        {e.name}
-                                    </option>
-                                ))}
-                            </select>
+                                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <LayoutGrid className="w-6 h-6" />}
+                            </button>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 dark:border-emerald-900/50 cursor-pointer no-print">
-                            <Plus className="w-4 h-4" />
-                            导入
-                            <input type="file" accept=".json" className="hidden" onChange={handleImport} />
-                        </label>
-                        <Link
-                            href="/leaderboard"
-                            className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50 no-print"
-                        >
-                            <Trophy className="w-4 h-4" />
-                            排行
-                        </Link>
-                        <Link
-                            href="/pk"
-                            className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 dark:border-indigo-900/50 no-print"
-                        >
-                            <Swords className="w-4 h-4" />
-                            PK场
-                        </Link>
-                        <Link
-                            href="/former-classmates"
-                            className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-rose-600 hover:text-white transition-all border border-rose-100 dark:border-rose-900/50 no-print"
-                        >
-                            <Users className="w-4 h-4" />
-                            419
-                        </Link>
-                        <button
-                            onClick={toggleTheme}
-                            className="group p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm text-slate-600 dark:text-slate-300 hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-slate-50 dark:hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer no-print"
-                            title={theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'}
-                        >
-                            {theme === 'light' ? (
-                                <Moon className="w-5 h-5 group-hover:text-indigo-500 group-hover:rotate-12 transition-all duration-300" />
-                            ) : (
-                                <Sun className="w-5 h-5 group-hover:text-amber-500 group-hover:rotate-45 transition-all duration-300" />
-                            )}
-                        </button>
-                        <button
-                            onClick={async () => {
-                                setIsExporting(true);
-                                const studentName = students.find(s => s.student_id === selectedStudentId)?.name || '学生';
-                                const examName = data?.latest?.exam_name || '诊断报告';
-                                await exportDashboardByElementId('report-content', `${studentName}_${examName}_深度诊断报告.pdf`);
-                                setIsExporting(false);
-                            }}
-                            disabled={isExporting || !data}
-                            className="flex items-center gap-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-700 dark:hover:bg-slate-200 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                            {isExporting ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <Download className="w-4 h-4" />
-                            )}
-                            {isExporting ? '生成中...' : ''}
-                        </button>
+                    {/* Desktop Menu & Selectors */}
+                    <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} md:flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto pb-4 md:pb-0`}>
+                        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                            {/* Student Selector */}
+                            <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all no-print flex-1 md:flex-none">
+                                <Users className="w-4 h-4 text-slate-400" />
+                                <select
+                                    className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer w-full md:min-w-[100px] disabled:cursor-not-allowed"
+                                    value={selectedStudentId}
+                                    onChange={(e) => handleStudentSelect(e.target.value)}
+                                >
+                                    {students.slice().sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN')).map((s: any) => (
+                                        <option key={s.id} value={s.id} className="dark:bg-slate-900 text-slate-900 dark:text-slate-200">
+                                            {s.former_class === '19班' ? '🏷️ ' : '🔖 '}{s.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Exam Selector */}
+                            <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all no-print flex-1 md:flex-none">
+                                <Calendar className="w-4 h-4 text-slate-400" />
+                                <select
+                                    className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer w-full md:min-w-[140px] disabled:cursor-not-allowed"
+                                    value={selectedExamId || ''}
+                                    onChange={(e) => handleExamSelect(e.target.value)}
+                                >
+                                    {exams.map((e: any) => (
+                                        <option key={e.exam_id} value={e.exam_id} className="dark:bg-slate-900 text-slate-900 dark:text-slate-200">
+                                            {e.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:flex items-center gap-2 w-full md:w-auto">
+                            <label className="hidden md:flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 dark:border-emerald-900/50 cursor-pointer no-print">
+                                <Plus className="w-4 h-4" />
+                                <span className="md:hidden lg:inline">导入</span>
+                                <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+                            </label>
+                            <Link
+                                href="/leaderboard"
+                                className="flex items-center justify-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50 no-print"
+                            >
+                                <Trophy className="w-4 h-4" />
+                                <span className="md:hidden lg:inline">排行</span>
+                            </Link>
+                            <Link
+                                href="/pk"
+                                className="hidden md:flex items-center justify-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 dark:border-indigo-900/50 no-print"
+                            >
+                                <Swords className="w-4 h-4" />
+                                <span className="md:hidden lg:inline">PK场</span>
+                            </Link>
+                            <Link
+                                href="/former-classmates"
+                                className="flex items-center justify-center gap-2 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-rose-600 hover:text-white transition-all border border-rose-100 dark:border-rose-900/50 no-print"
+                            >
+                                <Users className="w-4 h-4" />
+                                <span className="md:hidden lg:inline">419</span>
+                            </Link>
+                            
+                            <button
+                                onClick={toggleTheme}
+                                className="hidden md:block p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm text-slate-600 dark:text-slate-300 hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer no-print"
+                            >
+                                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                            </button>
+
+                            <button
+                                onClick={async () => {
+                                    setIsExporting(true);
+                                    const studentName = students.find(s => s.student_id === selectedStudentId)?.name || '学生';
+                                    const examName = data?.latest?.exam_name || '诊断报告';
+                                    await exportDashboardByElementId('report-content', `${studentName}_${examName}_深度诊断报告.pdf`);
+                                    setIsExporting(false);
+                                }}
+                                disabled={isExporting || !data}
+                                className="flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-700 dark:hover:bg-slate-200 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer col-span-2 sm:col-span-1 md:w-auto"
+                            >
+                                {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                <span>{isExporting ? '生成中...' : '导出'}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -390,14 +403,15 @@ function DashboardContent() {
                 </div>
 
                 {/* Section 1: 本次考试深度诊断 (Single Exam Focus) */}
-                <section className="space-y-6 mb-12">
+                <section className="space-y-4 md:space-y-6 mb-8 md:mb-12">
                     <div className="flex items-center gap-2 mb-2">
-                        <div className="w-1 h-6 bg-indigo-600 rounded-full"></div>
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">本次考试深度诊断 ({latest.exam_name})</h2>
+                        <div className="w-1 h-5 md:h-6 bg-indigo-600 rounded-full"></div>
+                        <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">本次考试深度诊断</h2>
+                        <span className="text-[10px] md:text-xs font-medium text-slate-400 md:mt-1 hidden sm:inline">({latest.exam_name})</span>
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                         {(() => {
                             const totalFull = subjects.reduce((acc: number, s: any) => acc + (['语文', '数学', '英语'].includes(s.subject) ? 150 : 100), 0);
                             const classAvgTotal = subjects.reduce((acc: number, s: any) => acc + (s.class_avg || 0), 0);
@@ -620,22 +634,22 @@ function DashboardContent() {
                                 <div className="flex-1 w-full min-h-[220px]">
                                     <QuadPerformanceChart subjects={latest.subjects} prevSubjects={data.prevSubjects} />
                                 </div>
-                                <div className="grid grid-cols-1 gap-2 w-full md:w-32 flex-shrink-0">
+                                <div className="grid grid-cols-2 md:grid-cols-1 gap-2 w-full md:w-32 flex-shrink-0">
                                     <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20">
                                         <span className="font-bold text-emerald-600 block text-xs mb-0.5">右上 (霸主)</span>
-                                        <span className="text-[10px] text-slate-500 font-medium">高分+稳定进步</span>
+                                        <span className="text-[10px] text-slate-500 font-medium leading-tight">高分+稳定进步</span>
                                     </div>
                                     <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/20">
                                         <span className="font-bold text-indigo-600 block text-xs mb-0.5">左上 (潜力)</span>
-                                        <span className="text-[10px] text-slate-500 font-medium">低分+稳定进步</span>
+                                        <span className="text-[10px] text-slate-500 font-medium leading-tight">低分+稳定进步</span>
                                     </div>
                                     <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/20">
                                         <span className="font-bold text-amber-600 block text-xs mb-0.5">右下 (爆发)</span>
-                                        <span className="text-[10px] text-slate-500 font-medium">高分但有波动</span>
+                                        <span className="text-[10px] text-slate-500 font-medium leading-tight">高分但有波动</span>
                                     </div>
                                     <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/20">
                                         <span className="font-bold text-rose-600 block text-xs mb-0.5">左下 (危机)</span>
-                                        <span className="text-[10px] text-slate-500 font-medium">低分且波动大</span>
+                                        <span className="text-[10px] text-slate-500 font-medium leading-tight">低分且波动大</span>
                                     </div>
                                 </div>
                             </div>
@@ -688,21 +702,21 @@ function DashboardContent() {
                 </section>
 
                 {/* Section 3: 学业提升建议 (Full Width at Bottom) */}
-                <section className="pb-12">
-                    <div className="bg-gradient-to-r from-indigo-600 to-blue-700 dark:from-indigo-700 dark:to-blue-900 p-8 rounded-2xl shadow-lg text-white">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <section className="pb-8 md:pb-12">
+                    <div className="bg-gradient-to-br from-indigo-600 to-blue-700 dark:from-indigo-700 dark:to-blue-900 p-6 md:p-8 rounded-2xl shadow-lg text-white">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                             <div className="max-w-3xl">
-                                <h3 className="text-2xl font-bold mb-3">学业提升建议</h3>
-                                <p className="text-indigo-100 dark:text-indigo-200 text-base leading-relaxed">
+                                <h3 className="text-xl md:text-2xl font-bold mb-3">学业提升建议</h3>
+                                <p className="text-indigo-100 dark:text-indigo-200 text-sm md:text-base leading-relaxed">
                                     基于最近的综合表现，您的{latest.subjects.sort((a: any, b: any) => (b.grade_rank || 0) - (a.grade_rank || 0))[0]?.subject}学科仍有较大提升空间。
-                                    建议针对该学科的薄弱知识点进行专项复习，并参考班级前十名的学习方法。同时，您的{latest.subjects.sort((a: any, b: any) => (a.grade_rank || 999) - (b.grade_rank || 999))[0]?.subject}学科表现优异，建议继续保持并尝试带动其他科目。
+                                    建议针对该学科的薄弱知识点进行专项复习，并参考班级前十名的学习方法。同时，您的{latest.subjects.sort((a: any, b: any) => (a.grade_rank || 999) - (b.grade_rank || 999))[0]?.subject}学科表现优异，建议保持并尝试带动其他科目。
                                 </p>
                             </div>
-                            <div className="flex gap-4 shrink-0 font-sans">
-                                <button className="bg-white dark:bg-slate-100 text-indigo-600 px-8 py-3 rounded-xl text-sm font-bold hover:bg-indigo-50 dark:hover:bg-white transition-colors shadow-md">
+                            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 shrink-0 font-sans">
+                                <button className="bg-white dark:bg-slate-100 text-indigo-600 px-6 md:px-8 py-3 rounded-xl text-sm font-bold hover:bg-indigo-50 transition-colors shadow-md w-full sm:w-auto">
                                     查看提分计划
                                 </button>
-                                <button className="bg-white/20 hover:bg-white/30 text-white px-8 py-3 rounded-xl text-sm font-medium transition-colors border border-white/30">
+                                <button className="bg-white/20 hover:bg-white/30 text-white px-6 md:px-8 py-3 rounded-xl text-sm font-medium transition-colors border border-white/30 w-full sm:w-auto">
                                     错题分析
                                 </button>
                             </div>
