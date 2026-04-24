@@ -21,19 +21,21 @@ interface QuadPerformanceChartProps {
 }
 
 export function QuadPerformanceChart({ subjects, prevSubjects }: QuadPerformanceChartProps) {
-    const data = subjects.map(s => {
-        const ps = prevSubjects?.find(p => p.subject === s.subject);
-        const fullScore = ['语文', '数学', '英语'].includes(s.subject) ? 150 : 100;
-        const scoreRate = (s.score / fullScore) * 100;
-        const stability = ps ? (ps.grade_rank - s.grade_rank) : 0;
+    const data = subjects
+        .filter(s => s.score !== null)
+        .map(s => {
+            const ps = prevSubjects?.find(p => p.subject === s.subject);
+            const fullScore = ['语文', '数学', '英语'].includes(s.subject) ? 150 : 100;
+            const scoreRate = (s.score / fullScore) * 100;
+            const stability = ps ? (ps.grade_rank - s.grade_rank) : 0;
 
-        return {
-            name: s.subject,
-            x: scoreRate,
-            y: stability,
-            z: s.score
-        };
-    });
+            return {
+                name: s.subject,
+                x: scoreRate,
+                y: stability,
+                z: s.score
+            };
+        });
 
     const xValues = data.map(d => d.x);
     const minX = Math.min(...xValues);

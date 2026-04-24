@@ -9,25 +9,27 @@ export const ClassCompareService = {
     getStudentComparison: (studentId: string, currentExamId: number) => {
         const db = getDb();
 
-        // 1. 获取 19 班时期的历史均值 (前 4 次考试)
+        // 1. 获取 19 班时期的历史均值 (所有符合条件的考试)
         const historyStats = db.prepare(`
             SELECT 
                 AVG(total_score) as avg_score,
+                AVG(total_full_score) as avg_full_score,
                 AVG(grade_rank) as avg_grade_rank,
                 COUNT(*) as exam_count
             FROM exam_results
             WHERE student_id = ? AND class_at_exam = '19班'
-        `).get(studentId) as { avg_score: number | null, avg_grade_rank: number | null, exam_count: number };
+        `).get(studentId) as { avg_score: number | null, avg_full_score: number | null, avg_grade_rank: number | null, exam_count: number };
 
         // 2. 获取当前选中考试的表现
         const currentStats = db.prepare(`
             SELECT 
                 total_score,
+                total_full_score,
                 grade_rank,
                 class_at_exam as current_class
             FROM exam_results
             WHERE student_id = ? AND exam_id = ?
-        `).get(studentId, currentExamId) as { total_score: number, grade_rank: number, current_class: string } | undefined;
+        `).get(studentId, currentExamId) as { total_score: number, total_full_score: number, grade_rank: number, current_class: string } | undefined;
 
         if (!historyStats.avg_score || !currentStats) {
             return null;
@@ -36,11 +38,13 @@ export const ClassCompareService = {
         return {
             history: {
                 avgScore: Math.round(historyStats.avg_score),
+                avgFullScore: Math.round(historyStats.avg_full_score || 750),
                 avgGradeRank: Math.round(historyStats.avg_grade_rank || 0),
                 examCount: historyStats.exam_count
             },
             current: {
                 score: currentStats.total_score,
+                fullScore: currentStats.total_full_score || 750,
                 gradeRank: currentStats.grade_rank,
                 class: currentStats.current_class
             },

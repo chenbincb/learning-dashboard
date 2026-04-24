@@ -22,7 +22,9 @@ export function SubjectInsightPanel({
     diagnosedIntents,
     onAIDiagnose
 }: SubjectInsightPanelProps) {
-    const insights = subjects.map(s => {
+    const activeSubjects = subjects.filter(s => s.score !== null);
+    
+    const insights = activeSubjects.map(s => {
         const ps = prevSubjects?.find(p => p.subject === s.subject);
         const gain = ps ? (ps.grade_rank - s.grade_rank) : 0;
         const fullScore = ['语文', '数学', '英语'].includes(s.subject) ? 150 : 100;
@@ -37,11 +39,9 @@ export function SubjectInsightPanel({
     const isGoalReached = targetData ? totalScore >= targetData.total_score : false;
     const totalGap = targetData ? Math.max(0, targetData.total_score - totalScore).toFixed(1) : null;
 
-    // 1. 计算所有科目的原始差距和权重
-    const ALL_SUBJECTS = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
-    let candidates = ALL_SUBJECTS.map(subName => {
-        const s = subjects.find(sub => sub.subject === subName);
-        if (!s) return { subject: subName, rawGap: 0, weight: 0, difficulty: 0, difficultyRatio: 0, score: 0 };
+    // 1. 计算活跃科目的原始差距和权重
+    let candidates = activeSubjects.map(s => {
+        const subName = s.subject;
 
         const fullScore = ['语文', '数学', '英语'].includes(subName) ? 150 : 100;
         const targetValue = targetData?.subjects[subName] || 0;

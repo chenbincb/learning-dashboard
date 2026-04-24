@@ -12,9 +12,13 @@ interface AIBriefCardProps {
 }
 
 export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy }: AIBriefCardProps) {
-    const { diagnose, loading, error, hasKey } = useAI();
+    const { diagnose, loading: globalLoading, error, hasKey } = useAI();
     const [result, setResult] = useState<any>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [localLoading, setLocalLoading] = useState(false);
+
+    // 组合 loading 状态
+    const loading = localLoading || globalLoading;
 
     // 检查是否有缓存
     // 0. 识别学生最新的考试 ID (基于 Trend 也就是时间轴)
@@ -30,30 +34,24 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
         }
     }, [examResult?.student_id, examResult?.exam_id]); // 监听学生变化和当前考试变化
 
+    // 检查是否有缓存
     const checkCache = async () => {
-        if (!examResult?.student_id) return;
+        if (!examResult?.student_id || !examResult?.exam_id) return;
         
-        // 1. 先查当前考试是否有诊断
-        const res = await handleDiagnose(false, examResult.exam_id);
-        if (res) {
-            setResult(res);
-            return;
-        }
-
-        // 2. 如果当前考试没有，尝试查该学生历史里最新的诊断 (降级方案)
-        // 这样可以解决导入新数据后，老总评“消失”的错觉
-        const historyIds = [...trend].reverse().map(t => t.exam_id);
-        for (const hid of historyIds) {
-            if (hid === examResult.exam_id) continue;
-            const hRes = await handleDiagnose(false, hid);
-            if (hRes) {
-                setResult({
-                    ...hRes,
-                    isHistorical: true, // 标记这是历史诊断
-                    historicalExamId: hid
-                });
-                break;
+        try {
+            // 使用 GET 请求静默检查缓存，不触发 AI 诊断
+            const res = await fetch(`/api/diagnose?studentId=${examResult.student_id}&examId=${examResult.exam_id}`);
+            if (res.ok) {
+                const intents = await res.json();
+                // 如果发现有 OVERVIEW 意图的分析存在
+                if (intents.includes('OVERVIEW')) {
+                    // 再去拉取具体内容 (handleDiagnose 内部会处理缓存读取)
+                    const data = await handleDiagnose(false, examResult.exam_id);
+                    if (data) setResult(data);
+                }
             }
+        } catch (e) {
+            console.error('Check cache failed', e);
         }
     };
 
@@ -61,41 +59,52 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
         const queryExamId = targetExamId || latestExamId;
         if (!examResult || !queryExamId) return null;
 
-        if (forceRefresh && !isLatestView && queryExamId === latestExamId) {
-            alert("请切换到最近一次考试页面进行重新诊断");
-            return null;
-        }
-
-        // 组装 Context (基于传入的 queryExamId 或默认 latestExamId)
-        const classAvgTotal = examResult.subjects.reduce((acc: number, curr: any) => acc + (curr.class_avg || 0), 0);
-        const rankTrend = trend.slice(0, 5).map(t => ({
-            name: t.name,
-            grade_rank: t.grade_rank,
-            class_rank: t.class_rank
-        }));
-
-        const context = {
-            current_exam: {
-                grade_rank: examResult.grade_rank,
-                class_rank: examResult.class_rank,
-                grade_total: 1200,
-            },
-            rank_trend: rankTrend,
-            macro_environment: {
-                class_avg_total: Math.round(classAvgTotal)
+        setLocalLoading(true);
+        try {
+            if (forceRefresh && !isLatestView && queryExamId === latestExamId) {
+                alert("请切换到最近一次考试页面进行重新诊断");
+                return null;
             }
-        };
 
-        const res = await diagnose('OVERVIEW', context, {
-            studentId: examResult.student_id,
-            examId: queryExamId,
-            forceRefresh
-        });
+            // 组装 Context (基于传入的 queryExamId 或默认 latestExamId)
+            const totalScore = examResult.subjects.reduce((acc: number, curr: any) => acc + (curr.score || 0), 0);
+            const totalFullScore = examResult.subjects.reduce((acc: number, curr: any) => acc + (curr.full_score || 0), 0);
+            const classAvgTotal = examResult.subjects.reduce((acc: number, curr: any) => acc + (curr.class_avg || 0), 0);
+            const rankTrend = trend.slice(0, 5).map(t => ({
+                name: t.name,
+                grade_rank: t.grade_rank,
+                class_rank: t.class_rank
+            }));
 
-        if (res && !targetExamId) {
-            setResult(res);
+            const context = {
+                current_exam: {
+                    total_score: totalScore,
+                    full_score: totalFullScore,
+                    grade_rank: examResult.grade_rank,
+                    class_rank: examResult.class_rank,
+                    grade_total: 1200,
+                },
+                rank_trend: rankTrend,
+                macro_environment: {
+                    class_avg_total: Math.round(classAvgTotal)
+                }
+            };
+
+            const res = await diagnose('OVERVIEW', context, {
+                studentId: examResult.student_id,
+                examId: queryExamId,
+                forceRefresh
+            });
+
+            // 只要拿到结果，就立即更新本地状态
+            if (res) {
+                console.log('[AIBriefCard] Diagnosis complete, updating UI result');
+                setResult(res);
+            }
+            return res;
+        } finally {
+            setLocalLoading(false);
         }
-        return res;
     };
 
     if (!hasKey) {

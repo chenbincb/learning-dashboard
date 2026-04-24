@@ -15,15 +15,15 @@ export default function FormerClassmatesPage() {
     const itemRefs = React.useRef<{ [key: string]: HTMLAnchorElement | null }>({});
 
 const cardColors = [
-    'border-indigo-200 bg-gradient-to-br from-indigo-50 to-white text-indigo-900',
-    'border-rose-200 bg-gradient-to-br from-rose-50 to-white text-rose-900',
-    'border-amber-200 bg-gradient-to-br from-amber-50 to-white text-amber-900',
-    'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white text-emerald-900',
-    'border-sky-200 bg-gradient-to-br from-sky-50 to-white text-sky-900',
-    'border-purple-200 bg-gradient-to-br from-purple-50 to-white text-purple-900',
-    'border-pink-200 bg-gradient-to-br from-pink-50 to-white text-pink-900',
-    'border-cyan-200 bg-gradient-to-br from-cyan-50 to-white text-cyan-900',
-    'border-lime-200 bg-gradient-to-br from-lime-50 to-white text-lime-900',
+    'border-indigo-200 dark:border-indigo-800/50 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-900/60 text-indigo-900 dark:text-indigo-300',
+    'border-rose-200 dark:border-rose-800/50 bg-gradient-to-br from-rose-50 to-white dark:from-rose-950/40 dark:to-slate-900/60 text-rose-900 dark:text-rose-300',
+    'border-amber-200 dark:border-amber-800/50 bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/40 dark:to-slate-900/60 text-amber-900 dark:text-amber-300',
+    'border-emerald-200 dark:border-emerald-800/50 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-slate-900/60 text-emerald-900 dark:text-emerald-300',
+    'border-sky-200 dark:border-sky-800/50 bg-gradient-to-br from-sky-50 to-white dark:from-sky-950/40 dark:to-slate-900/60 text-sky-900 dark:text-sky-300',
+    'border-purple-200 dark:border-purple-800/50 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/40 dark:to-slate-900/60 text-purple-900 dark:text-purple-300',
+    'border-pink-200 dark:border-pink-800/50 bg-gradient-to-br from-pink-50 to-white dark:from-pink-950/40 dark:to-slate-900/60 text-pink-900 dark:text-pink-300',
+    'border-cyan-200 dark:border-cyan-800/50 bg-gradient-to-br from-cyan-50 to-white dark:from-cyan-950/40 dark:to-slate-900/60 text-cyan-900 dark:text-cyan-300',
+    'border-lime-200 dark:border-lime-800/50 bg-gradient-to-br from-lime-50 to-white dark:from-lime-950/40 dark:to-slate-900/60 text-lime-900 dark:text-lime-300',
 ];
 
     useEffect(() => {
@@ -193,31 +193,31 @@ const cardColors = [
                                     key={student.id} 
                                     ref={el => { itemRefs.current[student.id] = el; }}
                                     href={`/?studentId=${student.id}`}
-                                    className={`group block rounded-2xl p-6 border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer ${highlightStudentId === student.id ? 'border-rose-500 ring-2 ring-rose-500/20 shadow-lg bg-rose-50/30 text-rose-900' : cardColors[index % cardColors.length]}`}
+                                    className={`group block rounded-2xl p-6 border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer ${highlightStudentId === student.id ? 'border-rose-500 ring-2 ring-rose-500/20 shadow-lg bg-rose-50/30 dark:bg-rose-950/30 text-rose-900 dark:text-rose-200' : cardColors[index % cardColors.length]}`}
                                 >
                                     <div className="flex items-start justify-between mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-black transition-colors ${highlightStudentId === student.id ? 'bg-rose-100 text-rose-500' : 'bg-white/60 text-slate-600 group-hover:bg-white group-hover:text-rose-500 shadow-inner'}`}>
+                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-black transition-colors ${highlightStudentId === student.id ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-500' : 'bg-white/60 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400 group-hover:bg-white dark:group-hover:bg-slate-700 group-hover:text-rose-500 shadow-inner'}`}>
                                                 {student.name.charAt(0)}
                                             </div>
                                             <div>
-                                                <h3 className={`font-bold text-lg ${highlightStudentId === student.id ? 'text-rose-600' : colorClass}`}>{student.name}</h3>
-                                                <div className={`flex items-center gap-1.5 text-xs ${highlightStudentId === student.id ? 'text-rose-700' : colorClass + '/80'}`}>
+                                                <h3 className={`font-bold text-lg ${highlightStudentId === student.id ? 'text-rose-600 dark:text-rose-400' : ''}`}>{student.name}</h3>
+                                                <div className={`flex items-center gap-1.5 text-xs ${highlightStudentId === student.id ? 'text-rose-700 dark:text-rose-300' : 'opacity-80'}`}>
                                                     <MapPin className="w-3 h-3" />
                                                     <span>当前所在: </span>
-                                                    <span className={`font-bold bg-white/50 dark:bg-slate-800/50 px-2 py-0.5 rounded-full ${highlightStudentId === student.id ? 'text-rose-800' : colorClass}`}>{student.current_class || '未记录'}</span>
+                                                    <span className={`font-bold bg-white/50 dark:bg-slate-800/60 px-2 py-0.5 rounded-full ${highlightStudentId === student.id ? 'text-rose-800 dark:text-rose-200' : ''}`}>{student.current_class || '未记录'}</span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <div className="text-[10px] font-bold uppercase tracking-wider mb-0.5 text-slate-500">年级排名</div>
-                                            <div className={`text-2xl font-black ${highlightStudentId === student.id ? 'text-rose-600' : colorClass}`}>
+                                            <div className={`text-2xl font-black ${highlightStudentId === student.id ? 'text-rose-600 dark:text-rose-400' : ''}`}>
                                                 {student.grade_rank ? `#${student.grade_rank}` : '---'}
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <div className="pt-4 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                                    <div className="pt-4 border-t border-slate-200/50 dark:border-slate-700/30 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
                                         <div className="flex items-center gap-1 italic">
                                             <Trophy className="w-3 h-3 text-amber-500" />
                                             数据来源: {student.exam_name || '暂无成绩数据'}

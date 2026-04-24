@@ -18,7 +18,7 @@ export function RadarAnalysis({ subjects }: RadarAnalysisProps) {
     const [visible, setVisible] = React.useState({ personal: true, class: true });
 
     const radarData = subjects
-        .filter(s => ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'].includes(s.subject))
+        .filter(s => s.score !== null && ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'].includes(s.subject))
         .map(s => {
             const fullScore = ['语文', '数学', '英语'].includes(s.subject) ? 150 : 100;
             return {

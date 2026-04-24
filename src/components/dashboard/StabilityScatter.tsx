@@ -20,7 +20,9 @@ export function StabilityScatter({ trend }: StabilityScatterProps) {
     const data = trend.map((t, i) => ({
         x: i + 1,
         y: t.grade_rank,
+        scoreRate: Math.round((t.total_score / (t.total_full_score || 750)) * 1000) / 10,
         z: t.total_score,
+        fullScore: t.total_full_score || 750,
         name: t.name
     }));
 
@@ -33,25 +35,30 @@ export function StabilityScatter({ trend }: StabilityScatterProps) {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgb(var(--chart-grid))" />
                         <XAxis type="number" dataKey="x" name="考试场次" hide />
                         <YAxis type="number" dataKey="y" name="年级排名" reversed hide />
-                        <ZAxis type="number" dataKey="z" range={[50, 400]} name="总分" />
+                        <ZAxis type="number" dataKey="scoreRate" range={[50, 400]} name="得分率" />
                         <Tooltip
                             cursor={{ strokeDasharray: '3 3' }}
                             content={({ active, payload, coordinate }: any) => {
                                 if (active && payload && payload.length && coordinate) {
+                                    const d = payload[0].payload;
                                     return (
                                         <div
                                             className="bg-white dark:bg-slate-900 p-3 border border-slate-100 dark:border-slate-800 shadow-xl rounded-lg text-xs min-w-[150px]"
                                             style={{ transform: `translateY(${-coordinate.y}px)` }}
                                         >
-                                            <p className="font-bold text-slate-700 dark:text-slate-100 mb-2">{payload[0].payload.name}</p>
+                                            <p className="font-bold text-slate-700 dark:text-slate-100 mb-2">{d.name}</p>
                                             <div className="space-y-1 font-sans">
                                                 <div className="flex justify-between gap-4">
                                                     <span className="text-slate-500 dark:text-slate-400">年级排名:</span>
-                                                    <span className="font-bold text-slate-700 dark:text-slate-100">{payload[0].payload.y}</span>
+                                                    <span className="font-bold text-slate-700 dark:text-slate-100">{d.y}</span>
                                                 </div>
                                                 <div className="flex justify-between gap-4">
-                                                    <span className="text-slate-500 dark:text-slate-400">总分:</span>
-                                                    <span className="font-bold text-slate-700 dark:text-slate-100">{payload[0].payload.z}</span>
+                                                    <span className="text-slate-500 dark:text-slate-400">总分/满分:</span>
+                                                    <span className="font-bold text-slate-700 dark:text-slate-100">{d.z} / {d.fullScore}</span>
+                                                </div>
+                                                <div className="flex justify-between gap-4">
+                                                    <span className="text-slate-500 dark:text-slate-400">得分率:</span>
+                                                    <span className="font-bold text-indigo-500">{d.scoreRate}%</span>
                                                 </div>
                                             </div>
                                         </div>

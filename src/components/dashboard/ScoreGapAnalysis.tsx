@@ -18,7 +18,7 @@ interface ScoreGapAnalysisProps {
 
 export function ScoreGapAnalysis({ subjects }: ScoreGapAnalysisProps) {
     const data = subjects
-        .filter(s => s.class_avg !== null)
+        .filter(s => s.score !== null && s.class_avg !== null)
         .map(s => ({
             subject: s.subject,
             gap: Math.round((s.score - s.class_avg) * 10) / 10

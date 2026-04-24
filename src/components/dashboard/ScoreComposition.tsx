@@ -18,13 +18,15 @@ interface ScoreCompositionProps {
 export function ScoreComposition({ subjects }: ScoreCompositionProps) {
     const subjectOrder = ['物理', '化学', '生物', '语文', '数学', '英语', '政治', '历史', '地理'];
 
-    const sortedSubjects = [...subjects].sort((a, b) => {
-        const indexA = subjectOrder.indexOf(a.subject);
-        const indexB = subjectOrder.indexOf(b.subject);
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
-    });
+    const sortedSubjects = [...subjects]
+        .filter((s: any) => s.score !== null)
+        .sort((a, b) => {
+            const indexA = subjectOrder.indexOf(a.subject);
+            const indexB = subjectOrder.indexOf(b.subject);
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
 
     const data = [{
         name: '达成度',

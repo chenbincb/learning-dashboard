@@ -33,7 +33,7 @@ export const ScoreService = {
         // 2. 获取该次考试的科目成绩
         // 确保显式选择 rank 字段，虽说 r.* 应该涵盖，但这里是 subject_scores
         const subjects = db.prepare(`
-            SELECT subject, score, grade_rank, class_rank, grade_avg, class_avg
+            SELECT subject, score, grade_rank, class_rank, grade_avg, class_avg, scaled_score, arts_science_rank
             FROM subject_scores 
             WHERE result_id = ?
         `).all(latestExam.id) as any[];
@@ -81,7 +81,7 @@ export const ScoreService = {
     getStudentTrend: (studentId: string, limit: number = 10) => {
         const db = getDb();
         const exams = db.prepare(`
-            SELECT e.id as exam_id, e.name, e.date, r.id as result_id, r.total_score, r.grade_rank, r.class_rank
+            SELECT e.id as exam_id, e.name, e.date, r.id as result_id, r.total_score, r.total_full_score, r.grade_rank, r.class_rank
             FROM exams e
             JOIN exam_results r ON e.id = r.exam_id
             WHERE r.student_id = ?
@@ -92,7 +92,7 @@ export const ScoreService = {
         // 为每次考试附上各科成绩
         const enrichedExams = exams.map(exam => {
             const subjects = db.prepare(`
-                SELECT subject, score, grade_rank, class_rank, grade_avg, class_avg
+                SELECT subject, score, grade_rank, class_rank, grade_avg, class_avg, scaled_score, arts_science_rank
                 FROM subject_scores 
                 WHERE result_id = ?
             `).all(exam.result_id) as any[];

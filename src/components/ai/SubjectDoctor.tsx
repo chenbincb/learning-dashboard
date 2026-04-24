@@ -14,7 +14,7 @@ interface SubjectDoctorProps {
 }
 
 export function SubjectDoctor({ subject, studentId, examId, trendData, peerComparison, onClose }: SubjectDoctorProps) {
-    const { diagnose, loading, error, hasKey } = useAI();
+    const { diagnose, loading, error, hasKey, displayName } = useAI();
     const [result, setResult] = useState<any>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
@@ -119,7 +119,7 @@ export function SubjectDoctor({ subject, studentId, examId, trendData, peerCompa
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400 animate-pulse">
                                 <Activity className="w-5 h-5 animate-spin" />
-                                <span className="text-sm font-medium">Gemini Pro 正在会诊中...</span>
+                                <span className="text-sm font-medium">{displayName} 正在会诊中...</span>
                             </div>
                             <div className="space-y-3">
                                 <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full animate-pulse" />

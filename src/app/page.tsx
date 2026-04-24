@@ -470,28 +470,29 @@ function DashboardContent() {
                         })()}
                     </div>
 
-                    {/* Subject Details - Full Width 3x3 Grid */}
+                    {/* Subject Details - Dynamic Filtering & Grid */}
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
                         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-6">各科得分详情</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
-                            {[
-                                ['语文', '数学', '英语'],
-                                ['物理', '化学', '生物'],
-                                ['政治', '历史', '地理']
-                            ].map((group, groupIdx) => (
-                                <React.Fragment key={groupIdx}>
-                                    {group.map(subName => {
-                                        const s = latest.subjects.find((item: any) => item.subject === subName);
-                                        const ps = data.prevSubjects?.find((item: any) => item.subject === subName);
-                                        if (!s) return <div key={subName} />;
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                            {(() => {
+                                const CORE_ORDER = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
+                                return latest.subjects
+                                    .filter((s: any) => s.score !== null && s.score !== undefined)
+                                    .sort((a: any, b: any) => CORE_ORDER.indexOf(a.subject) - CORE_ORDER.indexOf(b.subject))
+                                    .map((s: any) => {
+                                        const ps = data.prevSubjects?.find((item: any) => item.subject === s.subject);
+                                        const targetScore = targetData?.subjects?.[s.subject];
                                         return (
                                             <SubjectProgress
                                                 key={s.subject}
                                                 name={s.subject}
                                                 score={s.score}
+                                                scaledScore={s.scaled_score}
+                                                targetScore={targetScore}
                                                 total={['语文', '数学', '英语'].includes(s.subject) ? 150 : 100}
                                                 gradeRank={s.grade_rank}
                                                 classRank={s.class_rank}
+                                                artsScienceRank={s.arts_science_rank}
                                                 prevGradeRank={ps?.grade_rank}
                                                 prevClassRank={ps?.class_rank}
                                                 classAvg={s.class_avg}
@@ -500,11 +501,11 @@ function DashboardContent() {
                                                 isDiagnosed={diagnosedIntents.includes(`SUBJECT_DEEP_DIVE:${s.subject}`)}
                                             />
                                         );
-                                    })}
-                                </React.Fragment>
-                            ))}
+                                    });
+                            })()}
                         </div>
                     </div>
+
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
                         <RadarAnalysis subjects={latest.subjects} />
@@ -678,233 +679,13 @@ function DashboardContent() {
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">历史表现与趋势</h2>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Ranking Trend Chart */}
-                        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors flex flex-col">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">排名趋势分析</h3>
-                                <div className="flex items-center gap-4">
-                                    {/* Subject Mode Toggle (Radio Style) */}
-                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700 mr-2">
-                                        <button
-                                            onClick={() => setTrendMultiSelect(false)}
-                                            className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${!trendMultiSelect
-                                                ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
-                                                }`}
-                                        >
-                                            单科聚焦
-                                        </button>
-                                        <button
-                                            onClick={() => setTrendMultiSelect(true)}
-                                            className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${trendMultiSelect
-                                                ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
-                                                }`}
-                                        >
-                                            多选对比
-                                            {trendMultiSelect && <Check className="w-2.5 h-2.5" />}
-                                        </button>
-                                    </div>
-
-                                    <div className="h-3 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
-
-                                    <div className="flex gap-4 text-[10px] font-bold text-slate-500">
-                                        <div
-                                            className={`flex items-center gap-1.5 cursor-pointer transition-all ${showGradeRank ? 'opacity-100' : 'opacity-30 hover:opacity-50'}`}
-                                            onClick={() => setShowGradeRank(!showGradeRank)}
-                                        >
-                                            <div className="w-8 h-0.5 bg-slate-400"></div>
-                                            <span>年级排名</span>
-                                        </div>
-                                        <div
-                                            className={`flex items-center gap-1.5 cursor-pointer transition-all ${showClassRank ? 'opacity-100' : 'opacity-30 hover:opacity-50'}`}
-                                            onClick={() => setShowClassRank(!showClassRank)}
-                                        >
-                                            <div className="w-8 h-0.5 border-t-2 border-dashed border-slate-400 opacity-60"></div>
-                                            <span>班级排名</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex-1 w-full h-[250px] min-h-[250px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart
-                                        data={trend?.map((t: any) => {
-                                            const item: any = { name: t.name, date: t.date };
-                                            if (t.subjects) {
-                                                t.subjects.forEach((s: any) => {
-                                                    item[`${s.subject}_grade`] = s.grade_rank;
-                                                    item[`${s.subject}_class`] = s.class_rank;
-                                                });
-                                            }
-                                            item['总分_grade'] = t.grade_rank;
-                                            item['总分_class'] = t.class_rank;
-                                            return item;
-                                        }) || []}
-                                        margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-                                    >
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgb(var(--chart-grid))" />
-                                        <XAxis
-                                            dataKey="name"
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fill: 'rgb(var(--chart-text))', fontSize: 10 }}
-                                            dy={10}
-                                        />
-                                        <YAxis
-                                            yAxisId="left"
-                                            reversed
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fill: 'rgb(var(--chart-text))', fontSize: 10 }}
-                                            width={40}
-                                            label={{ value: '年级排名', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94a3b8' }}
-                                        />
-                                        <YAxis
-                                            yAxisId="right"
-                                            orientation="right"
-                                            reversed
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fill: 'rgb(var(--chart-text))', fontSize: 10 }}
-                                            width={40}
-                                            label={{ value: '班级排名', angle: 90, position: 'insideRight', fontSize: 10, fill: '#94a3b8' }}
-                                        />
-                                        <Tooltip
-                                            content={({ active, payload, label }: any) => {
-                                                if (active && payload && payload.length) {
-                                                    return (
-                                                        <div className="bg-white dark:bg-slate-900 p-3 border border-slate-100 dark:border-slate-800 shadow-xl rounded-lg text-xs">
-                                                            <p className="font-bold text-slate-800 dark:text-slate-100 mb-2">{label}</p>
-                                                            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                                                                {payload.map((p: any, i: number) => {
-                                                                    // Filter out duplicate legend items based on name logic or unique data keys
-                                                                    const isGrade = p.dataKey.endsWith('_grade');
-                                                                    const subj = p.name.split(' ')[0]; // Extract subject from "Subject (Suffix)"
-                                                                    return (
-                                                                        <div key={i} className="flex items-center gap-2">
-                                                                            <div className={`w-2 h-2 rounded-full ${!isGrade ? 'opacity-60' : ''}`} style={{ backgroundColor: p.stroke }}></div>
-                                                                            <span className="text-slate-500">{subj} {isGrade ? '年' : '班'}:</span>
-                                                                            <span className="font-bold text-slate-800 dark:text-slate-100">{p.value}</span>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
-                                        />
-                                        {['总分', '语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'].map(subject => {
-                                            if (!trendVisibleSubjects[subject]) return null;
-                                            const color = getSubjectColor(subject);
-                                            return (
-                                                <React.Fragment key={subject}>
-                                                    {showGradeRank && (
-                                                        <Line
-                                                            yAxisId="left"
-                                                            type="monotone"
-                                                            dataKey={`${subject}_grade`}
-                                                            stroke={color}
-                                                            strokeWidth={subject === '总分' ? 3 : 2}
-                                                            dot={{ r: 3, fill: color, strokeWidth: 0 }}
-                                                            activeDot={{ r: 5 }}
-                                                            name={`${subject} (年级)`}
-                                                            connectNulls
-                                                        />
-                                                    )}
-                                                    {showClassRank && (
-                                                        <Line
-                                                            yAxisId="right"
-                                                            type="monotone"
-                                                            dataKey={`${subject}_class`}
-                                                            stroke={color}
-                                                            strokeWidth={1} // Thinner line
-                                                            strokeOpacity={0.6} // Semi-transparent
-                                                            dot={{ r: 2, fill: color, strokeWidth: 0, fillOpacity: 0.6 }} // Smaller, lighter dots
-                                                            activeDot={{ r: 4 }}
-                                                            name={`${subject} (班级)`}
-                                                            connectNulls
-                                                        />
-                                                    )}
-                                                </React.Fragment>
-                                            );
-                                        })}
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </div>
-
-                            <div className="mt-4 flex flex-wrap items-center justify-center gap-4 border-t border-slate-50 dark:border-slate-800 pt-4 px-4">
-                                <div className="flex flex-wrap justify-center gap-2">
-                                    {['总分', '语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'].map(subject => (
-                                        <button
-                                            key={subject}
-                                            onClick={() => {
-                                                if (trendMultiSelect) {
-                                                    setTrendVisibleSubjects(prev => ({ ...prev, [subject]: !prev[subject] }));
-                                                } else {
-                                                    // 单选模式：重置其他，只选当前
-                                                    const newState: Record<string, boolean> = {
-                                                        '总分': false, '语文': false, '数学': false, '英语': false,
-                                                        '物理': false, '化学': false, '生物': false,
-                                                        '政治': false, '历史': false, '地理': false
-                                                    };
-                                                    newState[subject] = true;
-                                                    setTrendVisibleSubjects(newState);
-                                                }
-                                            }}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer hover:opacity-80 active:scale-95 ${trendVisibleSubjects[subject]
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-700'
-                                                : 'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-600 grayscale opacity-60'
-                                                }`}
-                                        >
-                                            <div
-                                                className="w-2.5 h-2.5 rounded-full shadow-sm"
-                                                style={{ backgroundColor: getSubjectColor(subject) }}
-                                            ></div>
-                                            {subject}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors h-full flex flex-col">
-                            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center justify-between">
-                                进化里程碑
-                                <Flag className="w-4 h-4 text-rose-500" />
-                            </h3>
-                            <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 flex-1 min-h-0">
-                                <MilestoneTimeline exams={exams} />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <StabilityScatter trend={trend} />
-                        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center items-center text-center transition-colors">
-                            <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/20 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-500 mb-4">
-                                <TrendingUp className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">进步趋势分析</h3>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md">
-                                您的年级排名在过去三次考试中呈现稳步上升趋势。
-                                保持当前的复习节奏，重点突破薄弱科目，有望在下次考试中进入年级前 800 名。
-                            </p>
-                        </div>
+                        {compareData && (
+                            <ClassTransitionCard data={compareData} />
+                        )}
                     </div>
                 </section>
-
-
-                {/* 分班适应性对比 (挂载至底部建议模块上方) */}
-                {compareData && (
-                    <div className="mb-6">
-                        <ClassTransitionCard data={compareData} />
-                    </div>
-                )}
 
                 {/* Section 3: 学业提升建议 (Full Width at Bottom) */}
                 <section className="pb-12">

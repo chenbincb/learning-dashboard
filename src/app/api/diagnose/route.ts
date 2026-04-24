@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GeminiService, AI_MODELS } from '@/lib/gemini';
+import { AIServiceAdapter, AIProvider } from '@/lib/aiAdapter';
 import { SchemaType } from '@google/generative-ai';
 import { getDb } from '@/lib/db';
 
@@ -7,6 +7,8 @@ import { getDb } from '@/lib/db';
 interface DiagnoseRequest {
     apiKey: string;
     baseUrl?: string;
+    provider?: AIProvider;
+    modelName?: string;
     model: 'FLASH' | 'PRO';
     intent: 'OVERVIEW' | 'SUBJECT_DEEP_DIVE' | 'STRATEGY';
     context: any; // 前端传来的数据 payload
@@ -40,18 +42,29 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json() as DiagnoseRequest;
-        const { apiKey, baseUrl, model, intent, context } = body;
+        console.log('[Diagnose] Received Body:', { ...body, apiKey: '***' });
+
+        const { 
+            apiKey, 
+            baseUrl, 
+            provider = 'GEMINI', 
+            modelName: inputModelName, 
+            model, 
+            intent, 
+            context,
+            studentId,
+            examId,
+            forceRefresh = false
+        } = body;
 
         const db = getDb();
+        const queryStudentId = String(studentId || '');
+        const queryExamId = Number(examId || 0);
 
-        // 0. 检查缓存 (如果不是强制刷新)
-        const forceRefresh = body.forceRefresh;
-        const queryStudentId = String(body.studentId);
-        const queryExamId = Number(body.examId);
+        console.log(`[Diagnose] Params: provider=${provider} student=${queryStudentId} exam=${queryExamId} intent=${intent} refresh=${forceRefresh}`);
 
-        console.log(`[Diagnose] Request: student=${queryStudentId} exam=${queryExamId} intent=${intent} refresh=${forceRefresh}`);
-
-        if (!forceRefresh && body.studentId && body.examId) {
+        if (!forceRefresh && studentId && examId) {
+            console.log('[Diagnose] Checking Cache...');
             const cached = db.prepare(`
                 SELECT result 
                 FROM ai_diagnoses 
@@ -59,22 +72,76 @@ export async function POST(req: NextRequest) {
             `).get(queryStudentId, queryExamId, intent, model) as { result: string };
 
             if (cached) {
-                console.log(`[Cache Hit] Serving cached diagnosis for ${body.studentId} - ${intent}`);
-                // 尝试解析 JSON，如果失败（如图片URL字符串）直接返回字符串
+                console.log(`[Cache Hit] Serving cached diagnosis for ${studentId} - ${intent}`);
                 try {
                     return NextResponse.json(JSON.parse(cached.result));
                 } catch (e) {
                     return NextResponse.json({ result: cached.result });
                 }
-            } else {
-                console.log(`[Cache Miss] No cache found for ${body.studentId} - ${intent}`);
-                // 如果是只读缓存模式（非强制刷新），未命中直接返回 null，不自动调用 AI (防止消耗 Token)
-                return NextResponse.json(null);
             }
         }
 
-        // 初始化 Gemini Service (apiKey 为空时将在 Service 内部 fallback 到环境变量)
-        const gemini = new GeminiService(apiKey, baseUrl);
+        // 确定最终使用的模型 ID
+        let finalModelName = inputModelName;
+        if (provider === 'GEMINI') {
+            finalModelName = inputModelName || (model === 'PRO' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview');
+        } else if (!finalModelName) {
+            finalModelName = 'gpt-4o';
+        }
+
+        console.log(`[Diagnose] Using Model: ${finalModelName} via ${provider}`);
+
+        // 初始化通用 AI 适配器
+        const adapter = new AIServiceAdapter({
+            provider,
+            apiKey: apiKey || process.env.GEMINI_API_KEY || '',
+            baseUrl,
+            modelName: finalModelName
+        });
+
+        // --- 核心增强：数据自组装 (Auto-Context) ---
+        let finalContext = context;
+        if (!finalContext && studentId && examId) {
+            console.log(`[Diagnose] Auto-assembling context for student=${studentId} exam=${examId}`);
+            // 查询本次考试成绩
+            const examData = db.prepare(`
+                SELECT * FROM student_exams 
+                WHERE student_id = ? AND exam_id = ?
+            `).get(studentId, examId) as any;
+
+            if (examData) {
+                // 查询该考试的所有科目分值
+                const subjects = db.prepare(`
+                    SELECT * FROM subject_results 
+                    WHERE student_exam_id = ?
+                `).all(examData.id) as any[];
+
+                const totalScore = subjects.reduce((a, b) => a + (b.score || 0), 0);
+                const totalFullScore = subjects.reduce((a, b) => a + (b.full_score || 0), 0);
+                const classAvgTotal = subjects.reduce((a, b) => a + (b.class_avg || 0), 0);
+
+                finalContext = {
+                    current_exam: {
+                        total_score: totalScore,
+                        full_score: totalFullScore,
+                        grade_rank: examData.grade_rank,
+                        class_rank: examData.class_rank,
+                        grade_total: 1200 // 模拟值
+                    },
+                    macro_environment: {
+                        class_avg_total: Math.round(classAvgTotal)
+                    },
+                    subjects: subjects.map(s => ({
+                        name: s.subject,
+                        score: s.score,
+                        full_score: s.full_score,
+                        class_avg: s.class_avg,
+                        grade_avg: s.grade_avg,
+                        grade_rank: s.grade_rank
+                    }))
+                };
+            }
+        }
 
         // 1. 总评模式 (OVERVIEW)
         if (intent === 'OVERVIEW') {
@@ -89,14 +156,17 @@ export async function POST(req: NextRequest) {
 
             const prompt = `
                 分析数据：
-                - 年级排名趋势：${JSON.stringify(context.rank_trend)}
-                - 本次排名：${context.current_exam.grade_rank} (全校${context.current_exam.grade_total || '未知'}人)
-                - 班级排名：${context.current_exam.class_rank}
-                - 试卷难度系数(班均分)：${context.macro_environment.class_avg_total}
+                - 本次考试总表现：${finalContext.current_exam.total_score} / ${finalContext.current_exam.full_score} (得分率: ${Math.round(finalContext.current_exam.total_score / finalContext.current_exam.full_score * 100)}%)
+                - 历史表现趋势：${JSON.stringify(finalContext.rank_trend || '暂无历史数据')}
+                - 本次排名：${finalContext.current_exam.grade_rank}
+                - 班级排名：${finalContext.current_exam.class_rank}
+                - 班级平均分：${finalContext.macro_environment.class_avg_total}
+
+                注意：历次考试的满分(full_score)可能不同，请优先参考“得分率”和“排名”的波动，而非绝对分数。
 
                 请输出 JSON：
                 {
-                    "summary": "一句不超过120字的评语",
+                    "summary": "一句不超过120字的评语，需结合得分率和难度进行点评",
                     "trend_tag": "RISING_STAR" | "STABLE" | "SLIPPING" | "CRISIS",
                     "confidence_score": 0-100
                 }
@@ -112,14 +182,14 @@ export async function POST(req: NextRequest) {
                 required: ["summary", "trend_tag", "confidence_score"],
             };
 
-            const result = await gemini.diagnoseText(model, prompt, systemPrompt, responseSchema);
+            const result = await adapter.chat(prompt, systemPrompt, responseSchema);
 
             // 保存结果到数据库
-            if (body.studentId && body.examId && !result.error) {
+            if (studentId && examId && !result.error) {
                 const info = db.prepare(`
                     INSERT OR REPLACE INTO ai_diagnoses (student_id, exam_id, intent, model, result, created_at)
                     VALUES (?, ?, ?, ?, ?, datetime('now'))
-                `).run(body.studentId, body.examId, intent, model, JSON.stringify(result));
+                `).run(studentId, examId, intent, model, JSON.stringify(result));
                 console.log(`[DB Insert] Saved diagnosis. Changes: ${info.changes}`);
             }
 
@@ -170,14 +240,14 @@ export async function POST(req: NextRequest) {
                 required: ["diagnosis", "root_cause", "suggestions"],
             };
 
-            const result = await gemini.diagnoseText(model, prompt, systemPrompt, responseSchema);
+            const result = await adapter.chat(prompt, systemPrompt, responseSchema);
 
             // 保存结果
-            if (body.studentId && body.examId && !result.error) {
+            if (studentId && examId && !result.error) {
                 const info = db.prepare(`
                     INSERT OR REPLACE INTO ai_diagnoses (student_id, exam_id, intent, model, result, created_at)
                     VALUES (?, ?, ?, ?, ?, datetime('now'))
-                `).run(body.studentId, body.examId, intent, model, JSON.stringify(result));
+                `).run(studentId, examId, intent, model, JSON.stringify(result));
                 console.log(`[DB Insert] Saved DEEP_DIVE. Changes: ${info.changes}`);
             }
 
@@ -229,7 +299,7 @@ export async function POST(req: NextRequest) {
                 required: ["core_analysis", "key_weakness", "action_plan"]
             };
 
-            const plan = await gemini.diagnoseText('PRO', analysisPrompt, analysisSystemPrompt, analysisSchema);
+            const plan = await adapter.chat(analysisPrompt, analysisSystemPrompt, analysisSchema);
 
             if (plan.error) {
                 return NextResponse.json({ error: 'Strategy analysis failed', details: plan.raw }, { status: 500 });
@@ -264,7 +334,7 @@ export async function POST(req: NextRequest) {
                 - Look like a beautifully organized "Bullet Journal" page.
             `;
 
-            const imageUrl = await gemini.generateImage(finalImagePrompt);
+            const imageUrl = await adapter.generateImage(finalImagePrompt);
 
             if (imageUrl) {
                 const result = {
@@ -272,11 +342,11 @@ export async function POST(req: NextRequest) {
                     plan: plan // 同时也返回文字版计划供前端备用
                 };
                 // 保存结果
-                if (body.studentId && body.examId) {
+                if (studentId && examId) {
                     const info = db.prepare(`
                         INSERT OR REPLACE INTO ai_diagnoses (student_id, exam_id, intent, model, result, created_at)
                         VALUES (?, ?, ?, ?, ?, datetime('now'))
-                    `).run(body.studentId, body.examId, intent, model, JSON.stringify(result));
+                    `).run(studentId, examId, intent, model, JSON.stringify(result));
                     console.log(`[DB Insert] Saved STRATEGY. Changes: ${info.changes}`);
                 }
                 return NextResponse.json(result);

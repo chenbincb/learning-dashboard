@@ -8,22 +8,28 @@ interface AISettingsModalProps {
 }
 
 export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
-    const { apiKey, preferredModel, baseUrl: savedBaseUrl, saveConfig } = useAI();
+    const { apiKey, baseUrl: savedBaseUrl, provider: savedProvider, modelName: savedModelName, preferredModel, saveConfig } = useAI();
     const [inputKey, setInputKey] = useState('');
     const [inputBaseUrl, setInputBaseUrl] = useState('');
+    const [selectedProvider, setSelectedProvider] = useState<string>('GEMINI');
+    const [inputModelName, setInputModelName] = useState('');
     const [selectedModel, setSelectedModel] = useState<string>('FLASH');
 
     // 同步 hook 状态到本地状态
     useEffect(() => {
         if (isOpen) {
+            console.log('[AISettings] Syncing from Hook:', { apiKey, savedBaseUrl, savedProvider, savedModelName, preferredModel });
             setInputKey(apiKey || '');
             setInputBaseUrl(savedBaseUrl || '');
+            setSelectedProvider(savedProvider || 'GEMINI');
+            setInputModelName(savedModelName || '');
             setSelectedModel(preferredModel || 'FLASH');
         }
-    }, [isOpen, apiKey, savedBaseUrl, preferredModel]);
+    }, [isOpen, apiKey, savedBaseUrl, savedProvider, savedModelName, preferredModel]);
 
     const handleSave = () => {
-        saveConfig(inputKey, inputBaseUrl, selectedModel as any);
+        console.log('[AISettings] Saving Config:', { inputKey, inputBaseUrl, selectedProvider, inputModelName, selectedModel });
+        saveConfig(inputKey, inputBaseUrl, selectedProvider, inputModelName, selectedModel as any);
         onClose();
     };
 
@@ -38,16 +44,45 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                         <Cpu className="w-6 h-6" />
                         <h2 className="text-xl font-bold">AI 智能中枢配置</h2>
                     </div>
-                    <p className="text-indigo-100 text-sm">连接 Gemini 3 大脑，开启深度学情诊断</p>
+                    <p className="text-indigo-100 text-sm">适配多模型驱动，开启深度学情诊断</p>
                 </div>
 
                 {/* Body */}
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+                    {/* Provider Selection */}
+                    <div className="space-y-3">
+                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            选择 AI 供应商
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={() => setSelectedProvider('GEMINI')}
+                                className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${selectedProvider === 'GEMINI'
+                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-500'
+                                    : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                                    }`}
+                            >
+                                <span className="font-bold">Google Gemini</span>
+                                <span className="text-[10px] opacity-70">原生 SDK 驱动</span>
+                            </button>
+                            <button
+                                onClick={() => setSelectedProvider('OPENAI_COMPATIBLE')}
+                                className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${selectedProvider === 'OPENAI_COMPATIBLE'
+                                    ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 ring-1 ring-rose-500'
+                                    : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                                    }`}
+                            >
+                                <span className="font-bold text-center">OpenAI 兼容协议</span>
+                                <span className="text-[10px] opacity-70">支持 DeepSeek / GPT 等</span>
+                            </button>
+                        </div>
+                    </div>
+
                     {/* API Key Input */}
                     <div className="space-y-2">
                         <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                             <Key className="w-4 h-4 text-slate-400" />
-                            Google Gemini API Key
+                            API Key
                         </label>
                         <input
                             type="password"
@@ -56,66 +91,72 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                             placeholder="sk-..."
                             className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100 transition-all font-mono text-sm"
                         />
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                            您的 Key 仅存储在本地浏览器。
-                        </p>
                     </div>
 
-                    {/* Base URL Input */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                            <Globe className="w-4 h-4 text-slate-400" />
-                            API Base URL (代理地址)
-                        </label>
-                        <input
-                            type="text"
-                            value={inputBaseUrl}
-                            onChange={(e) => setInputBaseUrl(e.target.value)}
-                            placeholder="https://generativelanguage.googleapis.com"
-                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100 transition-all font-mono text-sm"
-                        />
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                            选填。如果您在国内，请填入可用的 Gemini 代理地址。
-                        </p>
-                    </div>
+                    {selectedProvider === 'OPENAI_COMPATIBLE' && (
+                        <>
+                            {/* Base URL Input */}
+                            <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                    <Globe className="w-4 h-4 text-slate-400" />
+                                    API Base URL
+                                </label>
+                                <input
+                                    type="text"
+                                    value={inputBaseUrl}
+                                    onChange={(e) => setInputBaseUrl(e.target.value)}
+                                    placeholder="https://api.deepseek.com/v1"
+                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100 transition-all font-mono text-sm"
+                                />
+                            </div>
 
-                    {/* Model Selection */}
-                    <div className="space-y-3">
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                            <Cpu className="w-4 h-4 text-slate-400" />
-                            默认思考模型
-                        </label>
+                            {/* Custom Model Name */}
+                            <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                    <Settings className="w-4 h-4 text-slate-400" />
+                                    模型 ID (Model Name)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={inputModelName}
+                                    onChange={(e) => setInputModelName(e.target.value)}
+                                    placeholder="deepseek-chat / gpt-4o"
+                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100 transition-all font-mono text-sm"
+                                />
+                            </div>
+                        </>
+                    )}
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                onClick={() => setSelectedModel('FLASH')}
-                                className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all cursor-pointer ${selectedModel === 'FLASH'
-                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-500'
-                                    : 'border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'
-                                    }`}
-                            >
-                                <div className="font-bold flex items-center gap-1">
-                                    🚀 Flash
-                                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1 rounded">免费</span>
-                                </div>
-                                <span className="text-xs opacity-70">极速响应，实时互动</span>
-                            </button>
-
-                            <button
-                                onClick={() => setSelectedModel('PRO')}
-                                className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all cursor-pointer ${selectedModel === 'PRO'
-                                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 ring-1 ring-purple-500'
-                                    : 'border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'
-                                    }`}
-                            >
-                                <div className="font-bold flex items-center gap-1">
-                                    🧠 Pro
-                                    <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">深度</span>
-                                </div>
-                                <span className="text-xs opacity-70">深度推理，专家诊断</span>
-                            </button>
+                    {selectedProvider === 'GEMINI' && (
+                        <div className="space-y-3">
+                            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                <Cpu className="w-4 h-4 text-slate-400" />
+                                默认思考模型
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setSelectedModel('FLASH')}
+                                    className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${selectedModel === 'FLASH'
+                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                                        }`}
+                                >
+                                    <span className="font-bold">🚀 Flash</span>
+                                    <span className="text-[10px] opacity-70 text-center">极速响应</span>
+                                </button>
+                                <button
+                                    onClick={() => setSelectedModel('PRO')}
+                                    className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${selectedModel === 'PRO'
+                                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                                        }`}
+                                >
+                                    <span className="font-bold text-center">🧠 Pro</span>
+                                    <span className="text-[10px] opacity-70 text-center">深度推理</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Footer */}
