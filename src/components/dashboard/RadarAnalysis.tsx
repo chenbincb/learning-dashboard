@@ -6,6 +6,7 @@ import {
     RadarChart,
     PolarGrid,
     PolarAngleAxis,
+    PolarRadiusAxis,
     ResponsiveContainer,
     Tooltip
 } from 'recharts';
@@ -17,34 +18,51 @@ interface RadarAnalysisProps {
 export function RadarAnalysis({ subjects }: RadarAnalysisProps) {
     const [visible, setVisible] = React.useState({ personal: true, class: true });
 
+    const subjectOrder = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
+
     const radarData = subjects
-        .filter(s => s.score !== null && ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'].includes(s.subject))
+        .filter(s => s.score !== null && subjectOrder.includes(s.subject))
+        .sort((a, b) => subjectOrder.indexOf(a.subject) - subjectOrder.indexOf(b.subject))
         .map(s => {
-            const fullScore = ['语文', '数学', '英语'].includes(s.subject) ? 150 : 100;
+            const fullScore = s.full_score || (['语文', '数学', '英语'].includes(s.subject) ? 150 : 100);
+            
+            // 个人得分率
+            const personalRate = Math.round((s.score / fullScore) * 1000) / 10;
+
+            // 班级平均得分率
+            const classRate = s.class_avg 
+                ? Math.round((s.class_avg / fullScore) * 1000) / 10 
+                : 0;
+
             return {
                 subject: s.subject,
-                个人得分: Math.round((s.score / fullScore) * 1000) / 10,
-                班级平均: s.class_avg ? Math.round((s.class_avg / fullScore) * 1000) / 10 : 0,
+                个人得分率: personalRate,
+                班级均分: classRate,
                 及格线: 60,
                 fullMark: 100,
                 rawScore: s.score,
-                rawAvg: s.class_avg
+                classAvg: s.class_avg,
+                fullScore
             };
         });
 
     const CustomTooltip = ({ active, payload, coordinate }: any) => {
         if (active && payload && payload.length && coordinate) {
+            const d = payload[0].payload;
             return (
                 <div
                     className="bg-white dark:bg-slate-900 p-3 border border-slate-100 dark:border-slate-800 shadow-xl rounded-lg text-xs"
                     style={{ transform: `translateY(${-coordinate.y}px)` }}
                 >
-                    <p className="font-bold text-slate-700 dark:text-slate-100 mb-2">{payload[0].payload.subject}</p>
+                    <p className="font-bold text-slate-700 dark:text-slate-100 mb-2">{d.subject}（满分 {d.fullScore}）</p>
                     {payload.filter((p: any) => p.name !== '及格线').map((p: any, i: number) => (
                         <div key={i} className="flex items-center gap-2 mb-1">
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></div>
                             <span className="text-slate-500 dark:text-slate-400">{p.name}:</span>
-                            <span className="font-bold text-slate-700 dark:text-slate-100">{p.value}%</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-100">
+                                {p.name === '个人得分率' ? `${d.rawScore}分` : `${d.classAvg}分`}
+                                <span className="font-normal text-slate-400 ml-1">({p.value}%)</span>
+                            </span>
                         </div>
                     ))}
                 </div>
@@ -74,15 +92,16 @@ export function RadarAnalysis({ subjects }: RadarAnalysisProps) {
                         className={`flex items-center gap-1 transition-opacity ${visible.class ? 'opacity-100' : 'opacity-30'}`}
                     >
                         <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                        <span className="text-slate-500 dark:text-slate-400 font-medium">班级</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-medium">班均</span>
                     </button>
                 </div>
             </div>
-            <div className="h-64 w-full">
+            <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                    <RadarChart cx="50%" cy="50%" outerRadius="85%" data={radarData}>
                         <PolarGrid stroke="rgb(var(--chart-grid))" className="opacity-40" />
                         <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgb(var(--chart-text))', fontSize: 12 }} />
+                        <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
                         <Radar
                             name="及格线"
                             dataKey="及格线"
@@ -92,8 +111,8 @@ export function RadarAnalysis({ subjects }: RadarAnalysisProps) {
                         />
                         {visible.class && (
                             <Radar
-                                name="班级平均"
-                                dataKey="班级平均"
+                                name="班级均分"
+                                dataKey="班级均分"
                                 stroke="#10b981"
                                 fill="#10b981"
                                 fillOpacity={0.2}
@@ -101,11 +120,11 @@ export function RadarAnalysis({ subjects }: RadarAnalysisProps) {
                         )}
                         {visible.personal && (
                             <Radar
-                                name="个人得分"
-                                dataKey="个人得分"
+                                name="个人得分率"
+                                dataKey="个人得分率"
                                 stroke="#4f46e5"
                                 fill="#4f46e5"
-                                fillOpacity={0.5}
+                                fillOpacity={0.4}
                             />
                         )}
                         <Tooltip content={<CustomTooltip />} />

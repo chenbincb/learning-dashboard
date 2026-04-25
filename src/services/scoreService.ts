@@ -38,16 +38,19 @@ export const ScoreService = {
             WHERE result_id = ?
         `).all(latestExam.id) as any[];
 
-        // 3. 实时计算班级平均分（使用考试时班级快照）
+        // 3. 实时计算班级平均分（分阶段逻辑：ID >= 5 的考试统一以 15 班为基准，历史数据维持原样）
+        const examIdNum = Number(latestExam.exam_id);
+        const useFixedClass = examIdNum >= 5;
+
         const classAvgData = db.prepare(`
             SELECT ss.subject, AVG(ss.score) as avg_score
             FROM subject_scores ss
             JOIN exam_results er ON ss.result_id = er.id
-            WHERE er.exam_id = ? AND er.class_at_exam = (
+            WHERE er.exam_id = ? AND er.class_at_exam = ${useFixedClass ? "'15班'" : `(
                 SELECT class_at_exam FROM exam_results WHERE student_id = ? AND exam_id = ?
-            )
+            )`}
             GROUP BY ss.subject
-        `).all(Number(latestExam.exam_id), studentId, Number(latestExam.exam_id)) as any[];
+        `).all(...(useFixedClass ? [examIdNum] : [examIdNum, studentId, examIdNum])) as any[];
 
         // 4. 实时计算年级平均分 (难度系数)
         const gradeAvgData = db.prepare(`
@@ -58,13 +61,24 @@ export const ScoreService = {
             GROUP BY ss.subject
         `).all(Number(latestExam.exam_id)) as any[];
 
+        // 5. 实时计算本次考试各科的年级总人数 (MAX rank) 作为分母
+        const gradeTotals = db.prepare(`
+            SELECT ss.subject, MAX(ss.grade_rank) as max_rank
+            FROM subject_scores ss
+            JOIN exam_results er ON ss.result_id = er.id
+            WHERE er.exam_id = ?
+            GROUP BY ss.subject
+        `).all(Number(latestExam.exam_id)) as any[];
+
         const enrichedSubjects = subjects.map(s => {
             const cAvg = classAvgData.find(a => a.subject === s.subject);
             const gAvg = gradeAvgData.find(a => a.subject === s.subject);
+            const gTotal = gradeTotals.find(t => t.subject === s.subject);
             return {
                 ...s,
                 class_avg: s.class_avg || (cAvg ? Math.round(cAvg.avg_score * 10) / 10 : null),
-                grade_avg: s.grade_avg || (gAvg ? Math.round(gAvg.avg_grade * 10) / 10 : null)
+                grade_avg: s.grade_avg || (gAvg ? Math.round(gAvg.avg_grade * 10) / 10 : null),
+                grade_total: gTotal ? gTotal.max_rank : null
             };
         });
 
@@ -97,6 +111,15 @@ export const ScoreService = {
                 WHERE result_id = ?
             `).all(exam.result_id) as any[];
 
+            // 为趋势数据获取各科实考总人数
+            const gradeTotals = db.prepare(`
+                SELECT ss.subject, MAX(ss.grade_rank) as max_rank
+                FROM subject_scores ss
+                JOIN exam_results er ON ss.result_id = er.id
+                WHERE er.exam_id = ?
+                GROUP BY ss.subject
+            `).all(Number(exam.exam_id)) as any[];
+
             // 为趋势数据也补全平均分 (用于波动率计算)
             const gAvgs = db.prepare(`
                 SELECT ss.subject, AVG(ss.score) as avg_grade
@@ -110,9 +133,11 @@ export const ScoreService = {
                 ...exam,
                 subjects: subjects.map(s => {
                     const gAvg = gAvgs.find(a => a.subject === s.subject);
+                    const gTotal = gradeTotals.find(t => t.subject === s.subject);
                     return {
                         ...s,
-                        grade_avg: s.grade_avg || (gAvg ? Math.round(gAvg.avg_grade * 10) / 10 : null)
+                        grade_avg: s.grade_avg || (gAvg ? Math.round(gAvg.avg_grade * 10) / 10 : null),
+                        grade_total: gTotal ? gTotal.max_rank : null
                     };
                 })
             };

@@ -1,7 +1,9 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Sparkles } from 'lucide-react';
+import { getSubjectTotal } from '@/lib/constants';
 
-export function SubjectProgress({ name, score, scaledScore, targetScore, total, color, gradeRank, classRank, artsScienceRank, prevGradeRank, prevClassRank, classAvg, onAIDiagnose, isDiagnosed }: any) {
+export function SubjectProgress({ name, score, scaledScore, targetScore, total, color, gradeRank, gradeTotal, classRank, artsScienceRank, prevGradeRank, prevClassRank, classAvg, onAIDiagnose, isDiagnosed }: any) {
+    const subjectTotal = getSubjectTotal(name, gradeTotal);
     // 进度条百分比基于最终分（赋分优先，否则原始分）
     const finalScore = (scaledScore && scaledScore > 0) ? scaledScore : score;
     const percentage = (finalScore / total) * 100;
@@ -44,7 +46,7 @@ export function SubjectProgress({ name, score, scaledScore, targetScore, total, 
                         )}
                         {gradeRank && (
                             <span className="text-[10px] md:text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-1 py-0.5 rounded font-bold flex items-center group cursor-default shrink-0">
-                                年{gradeRank}
+                                年{gradeRank} / {subjectTotal}
                                 {renderTrend(gradeRank, prevGradeRank)}
                             </span>
                         )}

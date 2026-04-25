@@ -52,6 +52,7 @@ import { SubjectInsightPanel } from '@/components/dashboard/SubjectInsightPanel'
 import { MilestoneTimeline } from '@/components/dashboard/MilestoneTimeline';
 import { StabilityScatter } from '@/components/dashboard/StabilityScatter';
 import { AIBriefCard } from '@/components/ai/AIBriefCard';
+import { SUBJECT_TOTALS, getSubjectTotal } from '@/lib/constants';
 import { AISettingsModal } from '@/components/ai/AISettingsModal';
 import { SubjectDoctor } from '@/components/ai/SubjectDoctor';
 import { StrategyPlanner } from '@/components/ai/StrategyPlanner';
@@ -165,9 +166,9 @@ function DashboardContent() {
 
     const handleStudentSelect = (id: string) => {
         setSelectedStudentId(id);
-        setSelectedExamId(null); // 切换学生时重置考试选择，默认显示最新
+        // 不再强制重置考试选择，保留当前选中的考试
         setCompareData(null); // 重置对比数据
-        fetchData(id, null);
+        fetchData(id, selectedExamId);
     };
 
     const handleExamSelect = (id: string) => {
@@ -209,6 +210,24 @@ function DashboardContent() {
 
     const { latest, trend, exams, targetData } = data;
     const subjects = latest.subjects || [];
+
+    // 拍平趋势数据，用于 LineChart 渲染
+    const formattedTrend = trend.map((exam: any) => {
+        const flat: any = {
+            name: exam.name,
+            date: exam.date,
+            '总分_grade': exam.grade_rank,
+            '总分_class': exam.class_rank
+        };
+        if (exam.subjects) {
+            exam.subjects.forEach((s: any) => {
+                flat[`${s.subject}_grade`] = s.grade_rank;
+                flat[`${s.subject}_class`] = s.class_rank;
+            });
+        }
+        return flat;
+    });
+
     const physicsScore = subjects.find((s: any) => s.subject === '物理');
 
     return (
@@ -413,7 +432,7 @@ function DashboardContent() {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                         {(() => {
-                            const totalFull = subjects.reduce((acc: number, s: any) => acc + (['语文', '数学', '英语'].includes(s.subject) ? 150 : 100), 0);
+                            const totalFull = latest.total_full_score || subjects.reduce((acc: number, s: any) => acc + (['语文', '数学', '英语'].includes(s.subject) ? 150 : 100), 0);
                             const classAvgTotal = subjects.reduce((acc: number, s: any) => acc + (s.class_avg || 0), 0);
 
                             // 优劣分析
@@ -445,7 +464,7 @@ function DashboardContent() {
                                     <StatCard
                                         title="年级排名"
                                         value={`${latest.grade_rank}`}
-                                        subValue="(全校)"
+                                        subValue={`/ ${SUBJECT_TOTALS['总分']} (全校)`}
                                         extra={
                                             <span className="text-emerald-600 dark:text-emerald-400">班级排名   {latest.class_rank}</span>
                                         }
@@ -503,8 +522,9 @@ function DashboardContent() {
                                                 score={s.score}
                                                 scaledScore={s.scaled_score}
                                                 targetScore={targetScore}
-                                                total={['语文', '数学', '英语'].includes(s.subject) ? 150 : 100}
+                                                total={s.full_score || (['语文', '数学', '英语'].includes(s.subject) ? 150 : 100)}
                                                 gradeRank={s.grade_rank}
+                                                gradeTotal={s.grade_total}
                                                 classRank={s.class_rank}
                                                 artsScienceRank={s.arts_science_rank}
                                                 prevGradeRank={ps?.grade_rank}
@@ -693,6 +713,239 @@ function DashboardContent() {
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">历史表现与趋势</h2>
                     </div>
 
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Ranking Trend Chart */}
+                        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors flex flex-col">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">排名趋势分析</h3>
+                                <div className="flex items-center gap-4">
+                                    {/* Subject Mode Toggle (Radio Style) */}
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700 mr-2">
+                                        <button
+                                            onClick={() => setTrendMultiSelect(false)}
+                                            className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${!trendMultiSelect
+                                                ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                                                }`}
+                                        >
+                                            单科聚焦
+                                        </button>
+                                        <button
+                                            onClick={() => setTrendMultiSelect(true)}
+                                            className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${trendMultiSelect
+                                                ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                                                }`}
+                                        >
+                                            多选对比
+                                            {trendMultiSelect && <Check className="w-2.5 h-2.5" />}
+                                        </button>
+                                    </div>
+
+                                    <div className="h-3 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
+                                    <div className="flex gap-4 text-[10px] font-bold text-slate-500">
+                                        <div
+                                            className={`flex items-center gap-1.5 cursor-pointer transition-all ${showGradeRank ? 'opacity-100' : 'opacity-30 hover:opacity-50'}`}
+                                            onClick={() => setShowGradeRank(!showGradeRank)}
+                                        >
+                                            <div className="w-8 h-0.5 bg-slate-400"></div>
+                                            <span>年级排名</span>
+                                        </div>
+                                        <div
+                                            className={`flex items-center gap-1.5 cursor-pointer transition-all ${showClassRank ? 'opacity-100' : 'opacity-30 hover:opacity-50'}`}
+                                            onClick={() => setShowClassRank(!showClassRank)}
+                                        >
+                                            <div className="w-8 h-0.5 border-t-2 border-dashed border-slate-400 opacity-60"></div>
+                                            <span>班级排名</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 w-full h-[250px] min-h-[250px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart
+                                        data={trend?.map((t: any) => {
+                                            const item: any = { name: t.name, date: t.date };
+                                            if (t.subjects) {
+                                                t.subjects.forEach((s: any) => {
+                                                    // 只有在有名次的情况下才计算水位，防止未考科目出现 0.0% (第一名) 的假象
+                                                    if (s.grade_rank && s.grade_rank > 0) {
+                                                        const gTotal = getSubjectTotal(s.subject, s.grade_total);
+                                                        item[`${s.subject}_grade`] = (s.grade_rank / gTotal) * 100;
+                                                        item[`${s.subject}_grade_raw`] = s.grade_rank;
+                                                        item[`${s.subject}_grade_total`] = gTotal;
+                                                    }
+                                                    
+                                                    if (s.class_rank && s.class_rank > 0) {
+                                                        item[`${s.subject}_class`] = s.class_rank;
+                                                    }
+                                                });
+                                            }
+                                            const totalG = 1038;
+                                            item['总分_grade'] = (t.grade_rank / totalG) * 100;
+                                            item['总分_grade_raw'] = t.grade_rank;
+                                            item['总分_grade_total'] = totalG;
+                                            item['总分_class'] = t.class_rank;
+                                            return item;
+                                        }) || []}
+                                        margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgb(var(--chart-grid))" />
+                                        <XAxis
+                                            dataKey="name"
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: 'rgb(var(--chart-text))', fontSize: 10 }}
+                                            dy={10}
+                                        />
+                                        <YAxis
+                                            yAxisId="left"
+                                            reversed
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: 'rgb(var(--chart-text))', fontSize: 10 }}
+                                            width={40}
+                                            domain={[0, 100]}
+                                            tickFormatter={(val) => `${val}%`}
+                                            label={{ value: '年级水位 (0%为第1)', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94a3b8' }}
+                                        />
+                                        <YAxis
+                                            yAxisId="right"
+                                            orientation="right"
+                                            reversed
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: 'rgb(var(--chart-text))', fontSize: 10 }}
+                                            width={40}
+                                            label={{ value: '班级排名', angle: 90, position: 'insideRight', fontSize: 10, fill: '#94a3b8' }}
+                                        />
+                                        <Tooltip
+                                            content={({ active, payload, label }: any) => {
+                                                if (active && payload && payload.length) {
+                                                    // 尝试获取第一项的年级总人数供页眉显示
+                                                    const firstGradeItem = payload.find((p: any) => p.dataKey.endsWith('_grade'));
+                                                    const subjName = firstGradeItem ? firstGradeItem.name.split(' ')[0] : '';
+                                                    const totalVal = firstGradeItem ? firstGradeItem.payload[`${subjName}_grade_total`] : null;
+
+                                                    return (
+                                                        <div className="bg-white dark:bg-slate-900 p-3 border border-slate-100 dark:border-slate-800 shadow-xl rounded-lg text-xs min-w-[180px]">
+                                                            <div className="flex justify-between items-center mb-2 border-b border-slate-50 dark:border-slate-800 pb-1.5">
+                                                                <span className="font-bold text-slate-800 dark:text-slate-100">{label}</span>
+                                                                {totalVal && <span className="text-[10px] text-slate-400 font-normal">年级共 {totalVal}人</span>}
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                {payload.map((p: any, i: number) => {
+                                                                    const isGrade = p.dataKey.endsWith('_grade');
+                                                                    const subj = p.name ? p.name.split(' ')[0] : p.dataKey.split('_')[0];
+                                                                    const rawVal = isGrade ? p.payload[`${subj}_grade_raw`] : p.value;
+                                                                    const percent = isGrade ? p.value.toFixed(1) : null;
+                                                                    
+                                                                    return (
+                                                                        <div key={i} className="flex items-center justify-between gap-6">
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <div className={`w-1.5 h-1.5 rounded-full ${!isGrade ? 'opacity-40' : ''}`} style={{ backgroundColor: p.stroke }}></div>
+                                                                                <span className="text-slate-500 whitespace-nowrap">{subj}{isGrade ? '年级' : '班级'}:</span>
+                                                                                <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">第 {rawVal} 名</span>
+                                                                            </div>
+                                                                            {isGrade && <span className="text-[10px] text-slate-400 font-normal">({percent}%)</span>}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        {['总分', '语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'].map(subject => {
+                                            if (!trendVisibleSubjects[subject]) return null;
+                                            const color = getSubjectColor(subject);
+                                            return (
+                                                <React.Fragment key={subject}>
+                                                    {showGradeRank && (
+                                                        <Line
+                                                            yAxisId="left"
+                                                            type="monotone"
+                                                            dataKey={`${subject}_grade`}
+                                                            stroke={color}
+                                                            strokeWidth={subject === '总分' ? 3 : 2}
+                                                            dot={{ r: 3, fill: color, strokeWidth: 0 }}
+                                                            activeDot={{ r: 5 }}
+                                                            name={`${subject} (年级)`}
+                                                            connectNulls
+                                                        />
+                                                    )}
+                                                    {showClassRank && (
+                                                        <Line
+                                                            yAxisId="right"
+                                                            type="monotone"
+                                                            dataKey={`${subject}_class`}
+                                                            stroke={color}
+                                                            strokeWidth={1}
+                                                            strokeOpacity={0.6}
+                                                            dot={{ r: 2, fill: color, strokeWidth: 0, fillOpacity: 0.6 }}
+                                                            activeDot={{ r: 4 }}
+                                                            name={`${subject} (班级)`}
+                                                            connectNulls
+                                                        />
+                                                    )}
+                                                </React.Fragment>
+                                            );
+                                        })}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap items-center justify-center gap-4 border-t border-slate-50 dark:border-slate-800 pt-4 px-4">
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {['总分', '语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'].map(subject => (
+                                        <button
+                                            key={subject}
+                                            onClick={() => {
+                                                if (trendMultiSelect) {
+                                                    setTrendVisibleSubjects(prev => ({ ...prev, [subject]: !prev[subject] }));
+                                                } else {
+                                                    const newState: Record<string, boolean> = {
+                                                        '总分': false, '语文': false, '数学': false, '英语': false,
+                                                        '物理': false, '化学': false, '生物': false,
+                                                        '政治': false, '历史': false, '地理': false
+                                                    };
+                                                    newState[subject] = true;
+                                                    setTrendVisibleSubjects(newState);
+                                                }
+                                            }}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer hover:opacity-80 active:scale-95 ${trendVisibleSubjects[subject]
+                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-700'
+                                                : 'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-600 grayscale opacity-60'
+                                                }`}
+                                        >
+                                            <div
+                                                className="w-2.5 h-2.5 rounded-full shadow-sm"
+                                                style={{ backgroundColor: getSubjectColor(subject) }}
+                                            ></div>
+                                            {subject}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 进化里程碑 */}
+                        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors h-full flex flex-col">
+                            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center justify-between">
+                                进化里程碑
+                                <Flag className="w-4 h-4 text-rose-500" />
+                            </h3>
+                            <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 flex-1 min-h-0">
+                                <MilestoneTimeline exams={exams} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 第二排：并排展示稳定性与适应性 */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <StabilityScatter trend={trend} />
                         {compareData && (

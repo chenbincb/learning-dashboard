@@ -76,8 +76,11 @@ export const ImportService = {
         // 3.3 计算该学生的总满分
         let totalFullScore = 0;
         const processedSubjects = (subjects || []).map((sub: any) => {
+          const hasScore = sub.score !== null && sub.score !== undefined && sub.score !== '';
           const fullScore = (subjectMaxMap[sub.subject] || 0) > 100 ? 150 : 100;
-          totalFullScore += fullScore;
+          if (hasScore) {
+            totalFullScore += fullScore;
+          }
           return { ...sub, full_score: fullScore };
         });
 
