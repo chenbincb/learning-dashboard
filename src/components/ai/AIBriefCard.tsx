@@ -236,7 +236,7 @@ export function AIBriefCard({ examResult, trend, onOpenSettings, onOpenStrategy 
                         )}
                     </div>
 
-                    <div className="text-slate-500 dark:text-slate-400 text-xs md:text-sm line-clamp-2 leading-relaxed tracking-wide mt-1 md:mt-1.5">
+                    <div className="text-slate-500 dark:text-slate-400 text-xs md:text-sm md:line-clamp-2 leading-relaxed tracking-wide mt-1 md:mt-1.5">
                         {loading ? (
                             "正在分析此次考试数据..."
                         ) : result ? (

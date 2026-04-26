@@ -293,7 +293,7 @@ function DashboardContent() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 md:flex items-center gap-2 w-full md:w-auto">
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:flex items-center gap-2 w-full md:w-auto">
                             <label className="hidden md:flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 dark:border-emerald-900/50 cursor-pointer no-print">
                                 <Plus className="w-4 h-4" />
                                 <span className="md:hidden lg:inline">导入</span>
@@ -308,7 +308,7 @@ function DashboardContent() {
                             </Link>
                             <Link
                                 href="/pk"
-                                className="hidden md:flex items-center justify-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 dark:border-indigo-900/50 no-print"
+                                className="flex items-center justify-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 dark:border-indigo-900/50 no-print"
                             >
                                 <Swords className="w-4 h-4" />
                                 <span className="md:hidden lg:inline">PK场</span>
@@ -337,7 +337,7 @@ function DashboardContent() {
                                     setIsExporting(false);
                                 }}
                                 disabled={isExporting || !data}
-                                className="flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-700 dark:hover:bg-slate-200 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer col-span-2 sm:col-span-1 md:w-auto"
+                                className="flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-700 dark:hover:bg-slate-200 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer col-span-3 sm:col-span-1 md:w-auto"
                             >
                                 {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                                 <span>{isExporting ? '生成中...' : '导出'}</span>
@@ -717,47 +717,58 @@ function DashboardContent() {
                         {/* Ranking Trend Chart */}
                         <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors flex flex-col">
                             <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">排名趋势分析</h3>
-                                <div className="flex items-center gap-4">
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap shrink-0">
+                                    <span className="md:hidden">排名趋势</span>
+                                    <span className="hidden md:inline">排名趋势分析</span>
+                                </h3>
+                                <div className="flex items-center gap-2 md:gap-4 min-w-0">
                                     {/* Subject Mode Toggle (Radio Style) */}
                                     <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700 mr-2">
                                         <button
                                             onClick={() => setTrendMultiSelect(false)}
-                                            className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${!trendMultiSelect
+                                            className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all whitespace-nowrap ${!trendMultiSelect
                                                 ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm'
                                                 : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                                                 }`}
                                         >
-                                            单科聚焦
+                                            <span className="md:hidden">单科</span>
+                                            <span className="hidden md:inline">单科聚焦</span>
                                         </button>
                                         <button
                                             onClick={() => setTrendMultiSelect(true)}
-                                            className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${trendMultiSelect
+                                            className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md transition-all whitespace-nowrap ${trendMultiSelect
                                                 ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm'
                                                 : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                                                 }`}
                                         >
-                                            多选对比
+                                            <span className="md:hidden">多科</span>
+                                            <span className="hidden md:inline">多选对比</span>
                                             {trendMultiSelect && <Check className="w-2.5 h-2.5" />}
                                         </button>
                                     </div>
 
                                     <div className="h-3 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
 
-                                    <div className="flex gap-4 text-[10px] font-bold text-slate-500">
+                                    <div className="flex gap-2 md:gap-4 text-[10px] font-bold text-slate-500 whitespace-nowrap shrink-0">
                                         <div
-                                            className={`flex items-center gap-1.5 cursor-pointer transition-all ${showGradeRank ? 'opacity-100' : 'opacity-30 hover:opacity-50'}`}
+                                            className={`flex items-center gap-1 cursor-pointer transition-all ${showGradeRank ? 'opacity-100' : 'opacity-30 hover:opacity-50'}`}
                                             onClick={() => setShowGradeRank(!showGradeRank)}
                                         >
-                                            <div className="w-8 h-0.5 bg-slate-400"></div>
-                                            <span>年级排名</span>
+                                            <div className="w-6 md:w-8 h-0.5 bg-slate-400"></div>
+                                            <span>
+                                                <span className="md:hidden">年级</span>
+                                                <span className="hidden md:inline">年级排名</span>
+                                            </span>
                                         </div>
                                         <div
-                                            className={`flex items-center gap-1.5 cursor-pointer transition-all ${showClassRank ? 'opacity-100' : 'opacity-30 hover:opacity-50'}`}
+                                            className={`flex items-center gap-1 cursor-pointer transition-all ${showClassRank ? 'opacity-100' : 'opacity-30 hover:opacity-50'}`}
                                             onClick={() => setShowClassRank(!showClassRank)}
                                         >
-                                            <div className="w-8 h-0.5 border-t-2 border-dashed border-slate-400 opacity-60"></div>
-                                            <span>班级排名</span>
+                                            <div className="w-6 md:w-8 h-0.5 border-t-2 border-dashed border-slate-400 opacity-60"></div>
+                                            <span>
+                                                <span className="md:hidden">班级</span>
+                                                <span className="hidden md:inline">班级排名</span>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -900,7 +911,7 @@ function DashboardContent() {
                             </div>
 
                             <div className="mt-4 flex flex-wrap items-center justify-center gap-4 border-t border-slate-50 dark:border-slate-800 pt-4 px-4">
-                                <div className="flex flex-wrap justify-center gap-2">
+                                <div className="grid grid-cols-5 md:flex md:flex-wrap justify-center gap-x-1 gap-y-3 md:gap-2 w-full">
                                     {['总分', '语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'].map(subject => (
                                         <button
                                             key={subject}
@@ -917,8 +928,8 @@ function DashboardContent() {
                                                     setTrendVisibleSubjects(newState);
                                                 }
                                             }}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer hover:opacity-80 active:scale-95 ${trendVisibleSubjects[subject]
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-700'
+                                            className={`flex items-center justify-center gap-1 md:gap-1.5 px-1 md:px-3 py-1.5 rounded-full text-[10px] md:text-[11px] font-bold transition-all cursor-pointer hover:opacity-80 active:scale-95 ${trendVisibleSubjects[subject]
+                                                ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm'
                                                 : 'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-600 grayscale opacity-60'
                                                 }`}
                                         >

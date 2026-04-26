@@ -13,9 +13,10 @@ import {
 
 interface RadarAnalysisProps {
     subjects: any[];
+    variant?: 'card' | 'plain';
 }
 
-export function RadarAnalysis({ subjects }: RadarAnalysisProps) {
+export function RadarAnalysis({ subjects, variant = 'card' }: RadarAnalysisProps) {
     const [visible, setVisible] = React.useState({ personal: true, class: true });
 
     const subjectOrder = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
@@ -72,9 +73,9 @@ export function RadarAnalysis({ subjects }: RadarAnalysisProps) {
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">学科均衡度</h3>
+        <div className={variant === 'card' ? "bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors" : "py-1"}>
+            <div className={`flex items-center ${variant === 'card' ? 'justify-between mb-4' : 'justify-end mb-1 pr-4'}`}>
+                {variant === 'card' && <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">学科均衡度</h3>}
                 <div className="flex gap-3 text-[10px] font-sans">
                     <div className="flex items-center gap-1">
                         <div className="w-2 h-0.5 bg-red-500"></div>
@@ -96,7 +97,7 @@ export function RadarAnalysis({ subjects }: RadarAnalysisProps) {
                     </button>
                 </div>
             </div>
-            <div className="h-[350px] w-full">
+            <div className={`w-full ${variant === 'card' ? 'h-[350px]' : 'h-[230px]'}`}>
                 <ResponsiveContainer width="100%" height="100%">
                     <RadarChart cx="50%" cy="50%" outerRadius="85%" data={radarData}>
                         <PolarGrid stroke="rgb(var(--chart-grid))" className="opacity-40" />

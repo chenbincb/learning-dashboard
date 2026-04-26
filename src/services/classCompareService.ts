@@ -9,48 +9,74 @@ export const ClassCompareService = {
     getStudentComparison: (studentId: string, currentExamId: number) => {
         const db = getDb();
 
-        // 1. 获取 19 班时期的历史均值 (所有符合条件的考试)
+        // 1. 获取该学生参与过的所有班级（按考试顺序倒序）
+        const classHistory = db.prepare(`
+            SELECT DISTINCT class_at_exam 
+            FROM exam_results 
+            WHERE student_id = ? AND class_at_exam IS NOT NULL
+            ORDER BY exam_id DESC
+        `).all(studentId) as { class_at_exam: string }[];
+
+        if (classHistory.length < 2) {
+            // 如果只有一个班级记录，无法进行对比
+            return null;
+        }
+
+        const currentClass = classHistory[0].class_at_exam;
+        const previousClass = classHistory[1].class_at_exam;
+
+        // 2. 获取“上一个班级”时期的全量均值及累计值 (BEFORE)
         const historyStats = db.prepare(`
             SELECT 
                 AVG(total_score) as avg_score,
                 AVG(total_full_score) as avg_full_score,
+                SUM(total_score) as sum_score,
+                SUM(total_full_score) as sum_full_score,
                 AVG(grade_rank) as avg_grade_rank,
                 COUNT(*) as exam_count
             FROM exam_results
-            WHERE student_id = ? AND class_at_exam = '19班'
-        `).get(studentId) as { avg_score: number | null, avg_full_score: number | null, avg_grade_rank: number | null, exam_count: number };
+            WHERE student_id = ? AND class_at_exam = ?
+        `).get(studentId, previousClass) as { avg_score: number | null, avg_full_score: number | null, sum_score: number | null, sum_full_score: number | null, avg_grade_rank: number | null, exam_count: number };
 
-        // 2. 获取当前选中考试的表现
+        // 3. 获取“当前班级”时期的全量均值及累计值 (NOW)
         const currentStats = db.prepare(`
             SELECT 
-                total_score,
-                total_full_score,
-                grade_rank,
-                class_at_exam as current_class
+                AVG(total_score) as avg_score,
+                AVG(total_full_score) as avg_full_score,
+                SUM(total_score) as sum_score,
+                SUM(total_full_score) as sum_full_score,
+                AVG(grade_rank) as avg_grade_rank,
+                COUNT(*) as exam_count
             FROM exam_results
-            WHERE student_id = ? AND exam_id = ?
-        `).get(studentId, currentExamId) as { total_score: number, total_full_score: number, grade_rank: number, current_class: string } | undefined;
+            WHERE student_id = ? AND class_at_exam = ?
+        `).get(studentId, currentClass) as { avg_score: number | null, avg_full_score: number | null, sum_score: number | null, sum_full_score: number | null, avg_grade_rank: number | null, exam_count: number };
 
-        if (!historyStats.avg_score || !currentStats) {
+        if (!historyStats.avg_score || !currentStats.avg_score) {
             return null;
         }
 
         return {
             history: {
                 avgScore: Math.round(historyStats.avg_score),
-                avgFullScore: Math.round(historyStats.avg_full_score || 750),
+                avgFullScore: Math.round(historyStats.avg_full_score || 0),
+                sumScore: Math.round(historyStats.sum_score || 0),
+                sumFullScore: Math.round(historyStats.sum_full_score || 0),
                 avgGradeRank: Math.round(historyStats.avg_grade_rank || 0),
-                examCount: historyStats.exam_count
+                examCount: historyStats.exam_count,
+                class: previousClass
             },
             current: {
-                score: currentStats.total_score,
-                fullScore: currentStats.total_full_score || 750,
-                gradeRank: currentStats.grade_rank,
-                class: currentStats.current_class
+                score: Math.round(currentStats.avg_score),
+                fullScore: Math.round(currentStats.avg_full_score || 0),
+                sumScore: Math.round(currentStats.sum_score || 0),
+                sumFullScore: Math.round(currentStats.sum_full_score || 0),
+                gradeRank: Math.round(currentStats.avg_grade_rank || 0),
+                examCount: currentStats.exam_count,
+                class: currentClass
             },
-            // 计算位移: 负数表示排名上升(变好)，正数表示排名下降
-            rankChange: currentStats.grade_rank - (historyStats.avg_grade_rank || 0),
-            scoreChange: currentStats.total_score - (historyStats.avg_score || 0)
+            // 计算位移: 均值位移
+            rankChange: (currentStats.avg_grade_rank || 0) - (historyStats.avg_grade_rank || 0),
+            scoreChange: (currentStats.avg_score || 0) - (historyStats.avg_score || 0)
         };
     },
 

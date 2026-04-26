@@ -2,7 +2,7 @@ import React from 'react';
 import { TrendingUp, TrendingDown, Sparkles } from 'lucide-react';
 import { getSubjectTotal } from '@/lib/constants';
 
-export function SubjectProgress({ name, score, scaledScore, targetScore, total, color, gradeRank, gradeTotal, classRank, artsScienceRank, prevGradeRank, prevClassRank, classAvg, onAIDiagnose, isDiagnosed }: any) {
+export function SubjectProgress({ name, score, scaledScore, targetScore, total, color, gradeRank, gradeTotal, classRank, artsScienceRank, prevGradeRank, prevClassRank, classAvg, onAIDiagnose, isDiagnosed, isTopScorer }: any) {
     const subjectTotal = getSubjectTotal(name, gradeTotal);
     // 进度条百分比基于最终分（赋分优先，否则原始分）
     const finalScore = (scaledScore && scaledScore > 0) ? scaledScore : score;
@@ -28,9 +28,14 @@ export function SubjectProgress({ name, score, scaledScore, targetScore, total, 
                     <div className="flex items-center gap-1.5">
                         <button
                             onClick={onAIDiagnose}
-                            className="group/ai flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer shrink-0"
+                            className="group/ai flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer shrink-0"
                             title={`${name} AI 深度诊断`}
                         >
+                            {isTopScorer && (
+                                <div className="animate-bounce mt-2">
+                                    <span className="text-[22px]" title="单科状元">🥇</span>
+                                </div>
+                            )}
                             <span className="font-bold text-slate-700 dark:text-slate-200 text-base md:text-lg group-hover/ai:text-indigo-600 transition-colors">{name}</span>
                             <div className={`p-1 rounded-md transition-all scale-75 group-hover/ai:scale-90 ${isDiagnosed ? 'bg-indigo-100 dark:bg-indigo-900/40 opacity-100' : 'bg-slate-100 dark:bg-slate-800 opacity-40 group-hover/ai:opacity-100'}`}>
                                 <Sparkles className={`w-3 h-3 md:w-3.5 md:h-3.5 ${isDiagnosed ? 'text-indigo-600' : 'text-slate-400 group-hover/ai:text-indigo-500'}`} />

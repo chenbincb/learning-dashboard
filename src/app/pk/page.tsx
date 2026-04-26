@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { API } from '@/lib/api';
 import { SubjectProgress } from '@/components/SubjectProgress';
+import { RadarAnalysis } from '@/components/dashboard/RadarAnalysis';
 import Link from 'next/link';
 
 export default function PKPage() {
@@ -39,13 +40,13 @@ export default function PKPage() {
             document.documentElement.classList.add('dark');
         }
 
-// 加载学生列表和考试列表
+        // 加载学生列表和考试列表
         Promise.all([
             API.fetchStudentList(),
             API.fetchStudentScores('66641354') // 用第一个学生初始化考试列表
         ]).then(([studentList, scoresRes]) => {
             // 按姓名拼音排序
-            const sortedStudents = [...studentList].sort((a, b) => 
+            const sortedStudents = [...studentList].sort((a, b) =>
                 a.name.localeCompare(b.name, 'zh-CN')
             );
             setStudents(sortedStudents);
@@ -136,7 +137,7 @@ export default function PKPage() {
                     </div>
 
                     <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} md:flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto pb-4 md:pb-0`}>
-                        <div className="grid grid-cols-2 md:flex items-center gap-2 w-full md:w-auto">
+                        <div className="grid grid-cols-3 md:flex items-center gap-2 w-full md:w-auto">
                             <Link
                                 href="/leaderboard"
                                 className="flex items-center justify-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50"
@@ -169,12 +170,12 @@ export default function PKPage() {
                 </div>
             </header>
 
-{/* Exam & Student Selectors */}
+            {/* Exam & Student Selectors */}
             <div className={`${selectedStudentIds.length === 4 ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto px-4 md:px-8 pt-6 pb-0`}>
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4">
                     {/* Exam Selector */}
-                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
-                        <Calendar className="w-4 h-4 text-slate-400" />
+                    <div className="w-full sm:w-auto flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
+                        <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
                         <select
                             className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
                             value={selectedExamId || ''}
@@ -189,61 +190,75 @@ export default function PKPage() {
                     </div>
 
                     {/* Student Selectors */}
-                    {selectedStudentIds.map((sid, idx) => (
-                        <div key={idx} className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
-                            <Users className="w-4 h-4 text-slate-400" />
-                            <select
-                                className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer min-w-[100px]"
-                                value={sid}
-                                onChange={(e) => updateStudentId(idx, e.target.value)}
+                    <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-2 md:gap-4 w-full md:w-auto">
+                        {selectedStudentIds.map((sid, idx) => (
+                            <div key={idx} className="flex items-center justify-between md:justify-start gap-1 md:gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2 md:px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all w-full md:w-auto">
+                                <Users className="w-4 h-4 text-slate-400 shrink-0 hidden md:block" />
+                                <select
+                                    className="bg-transparent border-none outline-none text-xs md:text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer w-full min-w-0"
+                                    value={sid}
+                                    onChange={(e) => updateStudentId(idx, e.target.value)}
+                                >
+                                    <option value="" className="text-slate-300">选择学生...</option>
+                                    {students.map((s: any) => {
+                                        const isSelected = selectedStudentIds.includes(s.id) && s.id !== sid;
+                                        return (
+                                            <option
+                                                key={s.id}
+                                                value={s.id}
+                                                disabled={isSelected}
+                                                className={`dark:bg-slate-900 ${isSelected ? 'text-slate-300 dark:text-slate-700' : 'text-slate-900 dark:text-slate-200'}`}
+                                            >
+                                                {s.former_class === '19班' ? '🏷️ ' : '🔖 '}{s.name} {isSelected ? '(已选)' : ''}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                {selectedStudentIds.length > 2 && (
+                                    <button onClick={() => removeStudent(idx)} className="ml-0.5 md:ml-1 text-slate-400 hover:text-rose-500 shrink-0">
+                                        <X className="w-3 h-3 md:w-4 md:h-4" />
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                        {selectedStudentIds.length < 4 && (
+                            <button
+                                onClick={addStudent}
+                                className="flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl md:rounded-2xl text-sm font-medium shadow-sm transition-all w-full md:w-auto col-span-2 md:col-span-1"
                             >
-                                <option value="" className="text-slate-300">选择学生...</option>
-{students.map((s: any) => {
-                                    const isSelected = selectedStudentIds.includes(s.id) && s.id !== sid;
-                                    return (
-                                        <option
-                                            key={s.id}
-                                            value={s.id}
-                                            disabled={isSelected}
-                                            className={`dark:bg-slate-900 ${isSelected ? 'text-slate-300 dark:text-slate-700' : 'text-slate-900 dark:text-slate-200'}`}
-                                        >
-                                            {s.former_class === '19班' ? '🏷️ ' : '🔖 '}{s.name} {isSelected ? '(已选)' : ''}
-                                        </option>
-                                    );
-                                })}
-                            </select>
-                            {selectedStudentIds.length > 2 && (
-                                <button onClick={() => removeStudent(idx)} className="ml-1 text-slate-400 hover:text-rose-500">
-                                    <X className="w-4 h-4" />
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                    {selectedStudentIds.length < 4 && (
-                        <button
-                            onClick={addStudent}
-                            className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm transition-all"
-                        >
-                            <Plus className="w-4 h-4" />
-                            添加学生
-                        </button>
-                    )}
+                                <Plus className="w-4 h-4" />
+                                添加学生
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            <main className={`${selectedStudentIds.length === 4 ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto p-4 md:p-8`}>
+            <main className={`${selectedStudentIds.length === 4 ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto p-4 md:p-10`}>
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                     </div>
                 ) : (
                     <div className={`grid grid-cols-1 ${selectedStudentIds.length === 1 ? 'lg:grid-cols-1 max-w-2xl mx-auto w-full' :
-                        selectedStudentIds.length === 2 ? 'lg:grid-cols-[1fr_120px_1fr]' :
+                        selectedStudentIds.length === 2 ? 'lg:grid-cols-[1fr_140px_1fr]' :
                             selectedStudentIds.length === 3 ? 'lg:grid-cols-3' :
                                 'lg:grid-cols-4'
-                        } gap-6 transition-all`}>
+                        } gap-8 transition-all`}>
                         {(() => {
                             const SUBJECTS = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
+                            
+                            // 过滤掉所有参与PK的学生都没有成绩的科目
+                            const activeSubjects = SUBJECTS.filter(subName => {
+                                return studentsData.some(data => {
+                                    if (!data?.latest?.subjects) return false;
+                                    const subData = data.latest.subjects.find((item: any) => item.subject === subName);
+                                    return subData && subData.score > 0;
+                                });
+                            });
+                            
+                            // 如果没有选定学生，或者极端情况全部没成绩，则默认展示所有科目占位
+                            const displaySubjects = activeSubjects.length > 0 ? activeSubjects : SUBJECTS;
 
                             // 预计算胜负统计
                             const winStats = selectedStudentIds.map((sid, idx) => {
@@ -275,7 +290,7 @@ export default function PKPage() {
                             });
 
                             const statsPanel = selectedStudentIds.filter(id => id).length >= 2 && (
-                                <div key="stats-panel" className="col-span-full bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-2xl p-4 flex flex-wrap justify-center items-center gap-8 mb-2 shadow-sm animate-in fade-in slide-in-from-top-4">
+                                <div key="stats-panel" className="hidden lg:flex col-span-full bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-2xl p-4 flex-wrap justify-center items-center gap-8 mb-2 shadow-sm animate-in fade-in slide-in-from-top-4">
                                     <div className="flex items-center gap-2 text-indigo-950 dark:text-indigo-200">
                                         <Trophy className="w-5 h-5 text-amber-500" />
                                         <span className="font-bold">胜负平衡统计</span>
@@ -309,11 +324,14 @@ export default function PKPage() {
                                                 </div>
                                                 <p className="text-sm font-bold text-slate-400 dark:text-slate-500">待选择学生</p>
                                             </div>
-                                            <div className="flex-1 flex flex-col">
-                                                {SUBJECTS.map((_, sIdx) => (
+                                            <div className="hidden lg:block border-b border-dashed border-slate-200 dark:border-slate-800/50 bg-slate-50/10 dark:bg-slate-900/10 p-2">
+                                                <div className="h-[260px]"></div>
+                                            </div>
+                                            <div className="hidden lg:flex flex-1 flex-col">
+                                                {displaySubjects.map((_, sIdx) => (
                                                     <div
                                                         key={`empty-row-${sIdx}`}
-                                                        className={`h-[72px] px-6 flex items-center justify-center ${sIdx % 2 !== 0 ? 'bg-slate-50/30 dark:bg-slate-800/10' : ''} ${sIdx !== SUBJECTS.length - 1 ? 'border-b border-slate-50 dark:border-slate-800/20' : ''}`}
+                                                        className={`py-6 px-6 flex items-center justify-center ${sIdx % 2 !== 0 ? 'bg-slate-50/30 dark:bg-slate-800/10' : ''} ${sIdx !== displaySubjects.length - 1 ? 'border-b border-slate-50 dark:border-slate-800/20' : ''}`}
                                                     >
                                                         <div className="w-8 h-1 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
                                                     </div>
@@ -337,14 +355,20 @@ export default function PKPage() {
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-col">
-                                            {SUBJECTS.map((subName, sIdx) => {
+                                        <div className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/10 p-2">
+                                            <div className="h-[260px]">
+                                                <RadarAnalysis subjects={data.latest?.subjects || []} variant="plain" />
+                                            </div>
+                                        </div>
+
+                                        <div className="hidden lg:flex flex-col">
+                                            {displaySubjects.map((subName, sIdx) => {
                                                 const s = data.latest?.subjects?.find((item: any) => item.subject === subName);
                                                 const ps = data.prevSubjects?.find((item: any) => item.subject === subName);
                                                 return (
                                                     <div
                                                         key={subName}
-                                                        className={`h-[72px] px-6 flex flex-col justify-center relative ${sIdx % 2 !== 0 ? 'bg-slate-100/80 dark:bg-slate-800/20' : ''} ${sIdx !== SUBJECTS.length - 1 ? 'border-b border-slate-100 dark:border-slate-800/40' : ''}`}
+                                                        className={`h-[120px] px-6 flex flex-col justify-center relative ${sIdx % 2 !== 0 ? 'bg-slate-100/80 dark:bg-slate-800/20' : ''} ${sIdx !== displaySubjects.length - 1 ? 'border-b border-slate-100 dark:border-slate-800/40' : ''}`}
                                                     >
                                                         {s ? (
                                                             <SubjectProgress
@@ -357,15 +381,12 @@ export default function PKPage() {
                                                                 prevClassRank={ps?.class_rank}
                                                                 classAvg={s.class_avg}
                                                                 color={s.score >= (['语文', '数学', '英语'].includes(subName) ? 120 : 80) ? 'bg-emerald-500' : s.score >= (['语文', '数学', '英语'].includes(subName) ? 90 : 60) ? 'bg-blue-500' : 'bg-rose-500'}
+                                                                isTopScorer={s.score > 0 && s.score === topScores[subName] && selectedStudentIds.filter(id => id).length >= 2}
                                                             />
                                                         ) : (
                                                             <div className="text-slate-300 dark:text-slate-700 text-xs text-center">暂无数据</div>
                                                         )}
-                                                        {s && s.score > 0 && s.score === topScores[subName] && selectedStudentIds.filter(id => id).length >= 2 && (
-                                                            <div className="absolute left-0 top-5 animate-bounce">
-                                                                <span className="text-lg" title="单科状元">🥇</span>
-                                                            </div>
-                                                        )}
+
                                                     </div>
                                                 );
                                             })}
@@ -381,7 +402,7 @@ export default function PKPage() {
                                 const s1Data = studentsData[0];
                                 const s2Data = studentsData[1];
                                 const diffColumn = (
-                                    <div key="diff" className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden">
+                                    <div key="diff" className="hidden lg:flex bg-white dark:bg-slate-900 rounded-[2rem] shadow-lg shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 flex-col overflow-hidden h-fit">
                                         <div className="h-[144px] flex flex-col justify-center border-b border-slate-100 dark:border-slate-800">
                                             <div className="flex flex-col items-center">
                                                 <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">分数差</h3>
@@ -396,23 +417,31 @@ export default function PKPage() {
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-col">
-                                            {SUBJECTS.map((subName, sIdx) => {
+                                        <div className="hidden lg:block border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/10 p-2">
+                                            <div className="h-[260px]"></div>
+                                        </div>
+
+                                        <div className="hidden lg:flex flex-col">
+                                            {displaySubjects.map((subName, sIdx) => {
                                                 const s1 = s1Data?.latest?.subjects?.find((item: any) => item.subject === subName);
                                                 const s2 = s2Data?.latest?.subjects?.find((item: any) => item.subject === subName);
                                                 const diff = (s1 && s2) ? s1.score - s2.score : null;
                                                 return (
                                                     <div
                                                         key={`diff-${subName}`}
-                                                        className={`h-[72px] px-6 flex items-center justify-center ${sIdx % 2 !== 0 ? 'bg-slate-100/80 dark:bg-slate-800/20' : ''} ${sIdx !== SUBJECTS.length - 1 ? 'border-b border-slate-100 dark:border-slate-800/40' : ''}`}
+                                                        className={`h-[120px] px-6 flex flex-col justify-center items-center ${sIdx % 2 !== 0 ? 'bg-slate-100/80 dark:bg-slate-800/20' : ''} ${sIdx !== displaySubjects.length - 1 ? 'border-b border-slate-100 dark:border-slate-800/40' : ''}`}
                                                     >
-                                                        {diff !== null ? (
-                                                            <span className={`text-2xl font-semibold ${diff >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                                {diff > 0 ? '+' : ''}{diff}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-slate-200 dark:text-slate-800">--</span>
-                                                        )}
+                                                        <div className="flex items-center justify-center">
+                                                            {diff !== null ? (
+                                                                <span className={`text-2xl font-black ${diff >= 0 ? 'text-emerald-500' : 'text-rose-500'} tracking-tighter`}>
+                                                                    {diff > 0 ? '+' : ''}{diff}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-slate-200 dark:text-slate-800 font-bold">--</span>
+                                                            )}
+                                                        </div>
+                                                        {/* 关键：增加不可见的进度条占位，确保与左右两侧 SubjectProgress 物理高度一致 */}
+                                                        <div className="h-2 mt-1.5 md:mt-2 invisible"></div>
                                                     </div>
                                                 );
                                             })}

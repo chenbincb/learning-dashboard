@@ -123,7 +123,7 @@ const cardColors = [
                     </div>
 
                     <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} md:flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto pb-4 md:pb-0`}>
-                        <div className="grid grid-cols-2 md:flex items-center gap-2 w-full md:w-auto">
+                        <div className="grid grid-cols-3 md:flex items-center gap-2 w-full md:w-auto">
                             <Link
                                 href="/leaderboard"
                                 className="flex items-center justify-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-amber-600 hover:text-white transition-all border border-amber-100 dark:border-amber-900/50"
@@ -133,7 +133,7 @@ const cardColors = [
                             </Link>
                             <Link
                                 href="/pk"
-                                className="hidden md:flex items-center justify-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 dark:border-indigo-900/50"
+                                className="flex items-center justify-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 dark:border-indigo-900/50"
                             >
                                 <Swords className="w-4 h-4" />
                                 <span>PK场</span>
